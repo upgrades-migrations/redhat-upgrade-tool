@@ -18,7 +18,6 @@ Requires:       systemd >= systemd-44-23.fc17
 %{?el6:Requires: python-argparse}
 
 BuildRequires:  python2-devel
-BuildRequires:  systemd-devel
 BuildRequires:  asciidoc
 BuildArch:      noarch
 
@@ -49,10 +48,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/fedup/update.img.d
 %files
 %doc README.asciidoc TODO.asciidoc COPYING
 # systemd stuff
+%if 0%{?_unitdir:1}
 %{_unitdir}/system-upgrade.target
 %{_unitdir}/upgrade-prep.service
 %{_unitdir}/upgrade-switch-root.service
 %{_unitdir}/upgrade-switch-root.target
+%endif
 # upgrade prep program
 %{_libexecdir}/upgrade-prep.sh
 # SysV init replacement
