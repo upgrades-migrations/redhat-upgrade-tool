@@ -1,4 +1,4 @@
-# fedup.logutils - logging utilities for the Fedora Upgrader
+# rhelup.logutils - logging utilities for the RHEL Upgrader
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -49,7 +49,7 @@ class Formatter(logging.Formatter):
         record.levelsym = self.levelsyms.get(record.levelno, '(--)')
         return logging.Formatter.format(self, record)
 
-def debuglog(filename, loggername="fedup"):
+def debuglog(filename, loggername="rhelup"):
     h = logging.FileHandler(filename)
     h.setLevel(logging.DEBUG)
     h.setFormatter(Formatter())
@@ -57,7 +57,7 @@ def debuglog(filename, loggername="fedup"):
     logger.setLevel(logging.DEBUG)
     logger.addHandler(h)
 
-def consolelog(level=logging.WARNING, loggername="fedup", tty=None):
+def consolelog(level=logging.WARNING, loggername="rhelup", tty=None):
     h = logging.StreamHandler(tty)
     h.setLevel(level)
     formatter = logging.Formatter('%(name)s %(levelname)s: %(message)s')

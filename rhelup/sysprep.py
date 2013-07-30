@@ -1,4 +1,4 @@
-# fedup.sysprep - utility functions for system prep for Fedora Upgrade
+# rhelup.sysprep - utility functions for system prep for RHEL Upgrade
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -18,18 +18,18 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os
-import fedup.boot as boot
+import rhelup.boot as boot
 from shutil import copy2
 
-from fedup import _
-from fedup import cachedir, packagedir, packagelist, update_img_dir
-from fedup import upgradeconf, upgradelink, upgraderoot
-from fedup.media import write_systemd_unit
-from fedup.util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
-from fedup.conf import Config
+from rhelup import _
+from rhelup import cachedir, packagedir, packagelist, update_img_dir
+from rhelup import upgradeconf, upgradelink, upgraderoot
+from rhelup.media import write_systemd_unit
+from rhelup.util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
+from rhelup.conf import Config
 
 import logging
-log = logging.getLogger("fedup.sysprep")
+log = logging.getLogger("rhelup.sysprep")
 
 upgrade_target_wants = "/lib/systemd/system/system-upgrade.target.wants"
 

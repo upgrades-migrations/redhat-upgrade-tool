@@ -27,7 +27,7 @@ die() { echo "$@"; exit 1; }
 grep -qw 'upgrade.test' /proc/cmdline && UPGRADETEST=1 || UPGRADETEST=''
 
 # remove our boot entry
-[ $UPGRADETEST ] || new-kernel-pkg --remove fedup
+[ $UPGRADETEST ] || new-kernel-pkg --remove rhelup
 
 # make target dir for systemd's pivot_root
 mkdir -p $UPGRADEROOT/mnt

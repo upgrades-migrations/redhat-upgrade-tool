@@ -25,14 +25,14 @@ import argparse
 from rpmUtils.arch import getBaseArch
 
 # haha gross.
-if os.path.exists("../fedup.spec"):
+if os.path.exists("../rhelup.spec"):
     sys.path.append("../")
 
-from fedup.treeinfo import Treeinfo
+from rhelup.treeinfo import Treeinfo
 
 import logging
-log = logging.getLogger("fedup.maketreeinfo")
-from fedup.logutils import consolelog
+log = logging.getLogger("rhelup.maketreeinfo")
+from rhelup.logutils import consolelog
 
 def parse_args():
     p = argparse.ArgumentParser(
@@ -58,7 +58,7 @@ def parse_args():
     gen.add_argument('-s', '--timestamp', type=float, default=time.time(),
         help='timestamp (default: current time)')
     gen.add_argument('--family', default=family,
-        help='family (ex: Fedora, default: %(default)s)')
+        help='family (ex: Red Hat Enterprise Linux, default: %(default)s)')
     gen.add_argument('--version', default=version,
         help='version (ex: 17, 18-Beta, default: %(default)s)')
     gen.add_argument('--name', default=name,

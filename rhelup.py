@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# fedup.py - commandline frontend for fedup, the Fedora Upgrader.
+# rhelup.py - commandline frontend for rhelup, the RHEL Upgrader.
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -21,25 +21,25 @@
 
 import os, sys, time
 
-from fedup.util import call
-from fedup.download import FedupDownloader, YumBaseError
-from fedup.sysprep import prep_upgrade, prep_boot, setup_media_mount
-from fedup.upgrade import FedupUpgrade, TransactionError
+from rhelup.util import call
+from rhelup.download import RHELupDownloader, YumBaseError
+from rhelup.sysprep import prep_upgrade, prep_boot, setup_media_mount
+from rhelup.upgrade import RHELupUpgrade, TransactionError
 
-from fedup.commandline import parse_args, do_cleanup, device_setup
-from fedup import textoutput as output
+from rhelup.commandline import parse_args, do_cleanup, device_setup
+from rhelup import textoutput as output
 
-import logging, fedup.logutils, fedup.media
-log = logging.getLogger("fedup")
+import logging, rhelup.logutils, rhelup.media
+log = logging.getLogger("rhelup")
 def message(m):
     print m
     log.info(m)
 
-from fedup import _, kernelpath, initrdpath
+from rhelup import _, kernelpath, initrdpath
 
 def setup_downloader(version, instrepo=None, cacheonly=False, repos=[]):
     log.debug("setup_downloader(version=%s, repos=%s)", version, repos)
-    f = FedupDownloader(version=version, cacheonly=cacheonly)
+    f = RHELupDownloader(version=version, cacheonly=cacheonly)
     f.instrepoid = instrepo
     repo_cb = output.RepoCallback()
     repo_prog = output.RepoProgress(fo=sys.stderr)
@@ -70,7 +70,7 @@ def download_packages(f):
 def transaction_test(pkgs):
     print _("testing upgrade transaction")
     pkgfiles = set(po.localPkg() for po in pkgs)
-    fu = FedupUpgrade()
+    fu = RHELupUpgrade()
     fu.setup_transaction(pkgfiles=pkgfiles)
     fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
 
@@ -148,23 +148,23 @@ def main(args):
         setup_media_mount(args.device)
 
     if args.iso:
-        fedup.media.umount(args.device.mnt)
+        rhelup.media.umount(args.device.mnt)
 
     if args.reboot:
         reboot()
     else:
         print _('Finished. Reboot to start upgrade.')
 
-    if f.disabled_repos:
+    #if f.disabled_repos:
         # NOTE: I hate having a hardcoded list of Important Repos here.
         # This information should be provided by the system, somehow..
-        important = ("fedora", "updates")
-        if any(i in f.disabled_repos for i in important):
-            msg = _("WARNING: Some important repos could not be contacted: %s")
-        else:
-            msg = _("NOTE: Some repos could not be contacted: %s")
-        print msg % ", ".join(f.disabled_repos)
-        print _("If you start the upgrade now, packages from these repos will not be installed.")
+        #important = ("fedora", "updates")
+        #if any(i in f.disabled_repos for i in important):
+        #    msg = _("WARNING: Some important repos could not be contacted: %s")
+        #else:
+        #    msg = _("NOTE: Some repos could not be contacted: %s")
+        #print msg % ", ".join(f.disabled_repos)
+        #print _("If you start the upgrade now, packages from these repos will not be installed.")
 
 if __name__ == '__main__':
     args = parse_args()
@@ -176,8 +176,8 @@ if __name__ == '__main__':
 
     # set up logging
     if args.debuglog:
-        fedup.logutils.debuglog(args.debuglog)
-    fedup.logutils.consolelog(level=args.loglevel)
+        rhelup.logutils.debuglog(args.debuglog)
+    rhelup.logutils.consolelog(level=args.loglevel)
     log.info("%s starting at %s", sys.argv[0], time.asctime())
 
     try:

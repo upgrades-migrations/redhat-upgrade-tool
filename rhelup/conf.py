@@ -1,4 +1,4 @@
-# fedup.conf - config parser for Fedora Upgrade
+# rhelup.conf - config parser for RHEL Upgrade
 #
 # Copyright (C) 2012 Red Hat Inc.
 #

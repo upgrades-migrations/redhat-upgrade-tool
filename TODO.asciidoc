@@ -23,15 +23,15 @@ ISO/Device/"Offline" upgrades::
   * Handle mount chains deeper than ISO-on-USB
 
 GUI::
-  * Move commandline parsing to fedup library, use it
+  * Move commandline parsing to rhelup library, use it
   * Wire up the UI bits
   * Wire up progress callbacks
   ** yum in a subprocess
   *** use `multiprocessing.Queue` to send back progress data?
 
 Migration::
-  * Add a _fedup-before-upgrade_ scriptlet hook
-  ** Not technically a dracut hook, since it'll be run by fedup
+  * Add a _rhelup-before-upgrade_ scriptlet hook
+  ** Not technically a dracut hook, since it'll be run by rhelup
   ** Migrate `KEYTABLE=...` to `KEYMAP=...`
   *** See https://bugzilla.redhat.com/show_bug.cgi?id=859258 and others
 

@@ -1,4 +1,4 @@
-# fedup.upgrade - actually run the upgrade.
+# rhelup.upgrade - actually run the upgrade.
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -26,10 +26,10 @@ import os, tempfile
 from threading import Thread
 
 import logging
-log = logging.getLogger('fedup.upgrade')
+log = logging.getLogger('rhelup.upgrade')
 
-from fedup import _
-from fedup.util import df, hrsize
+from rhelup import _
+from rhelup.util import df, hrsize
 
 class TransactionSet(TransactionSetCore):
     flags = TransactionSetCore._flags
@@ -113,10 +113,10 @@ probsummary = { rpm.RPMPROB_DISKSPACE: DiskspaceProblemSummary,
               }
 
 
-class FedupError(Exception):
+class RHELupError(Exception):
     pass
 
-class TransactionError(FedupError):
+class TransactionError(RHELupError):
     def __init__(self, problems):
         self.problems = problems
         self.summaries = list()
@@ -125,7 +125,7 @@ class TransactionError(FedupError):
             self.summaries.append(summarize(t, problems))
 
 def pipelogger(pipe, level=logging.INFO):
-    logger = logging.getLogger("fedup.rpm")
+    logger = logging.getLogger("rhelup.rpm")
     logger.info("opening pipe")
     with open(pipe, 'r') as fd:
         for line in fd:
@@ -144,7 +144,7 @@ logging_to_rpm = {
     logging.CRITICAL:   rpm.RPMLOG_CRIT,
 }
 
-class FedupUpgrade(object):
+class RHELupUpgrade(object):
     def __init__(self, root='/', logpipe=True, rpmloglevel=logging.INFO):
         self.root = root
         self.ts = None
@@ -182,7 +182,7 @@ class FedupUpgrade(object):
 
     def openpipe(self):
         log.debug("creating log pipe")
-        pipefile = tempfile.mktemp(prefix='fedup-rpm-log.')
+        pipefile = tempfile.mktemp(prefix='rhelup-rpm-log.')
         os.mkfifo(pipefile, 0600)
         log.debug("starting logging thread")
         pipethread = Thread(target=pipelogger, name='pipelogger',

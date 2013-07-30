@@ -3,7 +3,7 @@ MANDIR=/usr/share/man
 mandir=$(MANDIR)
 man8dir=$(mandir)/man8
 
-MAN8PAGES=fedup.8
+MAN8PAGES=rhelup.8
 MANPAGES=$(MAN8PAGES)
 
 all: $(MANPAGES)

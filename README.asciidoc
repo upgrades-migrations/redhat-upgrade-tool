@@ -1,16 +1,15 @@
-fedup - the Fedora Upgrader
+rhelup - the RHEL Upgrader
 ===========================
 Will Woods <wwoods@redhat.com>
-:fedup_dracut: https://github.com/wgwoods/fedup-dracut/
-:fedup_fedora: http://fedoraproject.org/wiki/FedUp
+:rhelup_dracut: https://github.com/dashea/rhelup-dracut/
 
-This is 'fedup', the Fedora Upgrade tool. This repo/package has the following
+This is 'rhelup', the RHEL Upgrade tool. This repo/package has the following
 contents:
 
 Frontend / pre-upgrade::
     This is the GUI/CLI frontend. It's responsible for setting up the system
     to be upgraded: downloading packages, modifying the bootloader, etc.
-    * Files: `fedup/`, `fedup.py`, `fedup-gtk.py` (and `ui/`)
+    * Files: `rhelup/`, `rhelup.py`, `rhelup-gtk.py` (and `ui/`)
 
 Upgrade services::
     Part of a distro-neutral framework for performing major system upgrades
@@ -19,31 +18,8 @@ Upgrade services::
     setting up your disks.
     * Files: `systemd/`
 
-The actual upgrade is handled inside the initramfs by 'fedup-dracut', which
-can be found here: {fedup_dracut}
-
-How to test (for Fedora users)
-------------------------------
-
-`fedup` is packaged in Fedora 17 and later; to upgrade to the most recent
-*released* version of Fedora 18 over the network, do:
-
-  fedup --network 18
-
-If you want to use upgrade images from a test tree that's not in the Fedora
-mirror system, do:
-
-  fedup --network 18 --instrepo TEST-TREE-URL
-
-The URL should be the directory that contains `.treeinfo` (usually the `/os/`
-dir.)
-
-If you want to install from media, make sure it's mounted and then run
-
-  fedup --device
-
-More information for Fedora users and testers can be found on the
-{fedup_fedora}[Fedora wiki].
+The actual upgrade is handled inside the initramfs by 'rhelup-dracut', which
+can be found here: {rhelup_dracut}
 
 Building it yourself
 --------------------
@@ -56,23 +32,23 @@ Building upgrade images
 ~~~~~~~~~~~~~~~~~~~~~~~
 You'll need a system running the _new_ release for this.
 
-See {fedup_dracut}[the fedup-dracut README] for details, but roughly:
+See {rhelup_dracut}[the rhelup-dracut README] for details, but roughly:
 
-. Install 'fedup-dracut' and its dependencies
+. Install 'rhelup-dracut' and its dependencies
     * deps: 'dracut', 'rpm-devel', 'plymouth-devel', 'glib2-devel'
 . `make install`
-. `./makefeduprepo REPODIR`
+. `./makerheluprepo REPODIR`
     * this requires 'createrepo'
 . Copy REPODIR somewhere HTTP-accessible
 
-Upgrading old system using `fedup`
+Upgrading old system using `rhelup`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 . Install build requirements
     * 'python-devel', 'systemd-devel'
 . Install frontend(s) and systemd support files
     * `make install`
-. Run fedup to prepare system
-    * `fedup --network 18 --instrepo http://your-repo.host/REPODIR`
+. Run rhelup to prepare system
+    * `rhelup --network 7.0 --instrepo http://your-repo.host/REPODIR`
     ** This will take a while. _Be patient._
     ** You can cancel it and it'll resume downloading where it left off.
 . Reboot

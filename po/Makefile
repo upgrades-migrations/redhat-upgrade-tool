@@ -1,2 +1,2 @@
-fedup.pot:
-	intltool-update --pot --gettext-package=fedup
+rhelup.pot:
+	intltool-update --pot --gettext-package=rhelup

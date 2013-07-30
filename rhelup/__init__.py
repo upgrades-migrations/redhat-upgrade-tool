@@ -1,4 +1,4 @@
-# __init__.py for fedup - the Fedora Upgrade python package
+# __init__.py for rhelup - the RHEL Upgrade python package
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -18,26 +18,26 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import logging
-from fedup.logutils import NullHandler
-log = logging.getLogger("fedup")
+from rhelup.logutils import NullHandler
+log = logging.getLogger("rhelup")
 log.addHandler(NullHandler())
 
 import gettext
-t = gettext.translation("fedup", "/usr/share/locale", fallback=True)
+t = gettext.translation("rhelup", "/usr/share/locale", fallback=True)
 _ = t.lgettext
 
-kernel_id = 'fedup'
+kernel_id = 'rhelup'
 # NOTE: new-kernel-pkg requires this kernel name/path
 kernelpath = '/boot/vmlinuz-%s' % kernel_id
 initrdpath = '/boot/initramfs-%s.img' % kernel_id
 
-cachedir = '/var/tmp/fedora-upgrade'
-packagedir = '/var/lib/fedora-upgrade'
+cachedir = '/var/tmp/rhelup-upgrade'
+packagedir = '/var/lib/rhelup-upgrade'
 packagelist = packagedir + '/package.list'
 upgradeconf = packagedir + '/upgrade.conf'
 upgradelink = '/system-upgrade'
 upgraderoot = '/system-upgrade-root'
 
-mirrormanager = 'https://mirrors.fedoraproject.org/metalink'
+mirrormanager = ''
 
-update_img_dir = '/etc/fedup/update.img.d'
+update_img_dir = '/etc/rhelup/update.img.d'

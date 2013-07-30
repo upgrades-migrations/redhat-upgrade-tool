@@ -1,4 +1,4 @@
-# fedup.util - various shared utility functions for fedup
+# rhelup.util - various shared utility functions for rhelup
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -22,7 +22,7 @@ from shutil import rmtree
 from subprocess import Popen, CalledProcessError, PIPE, STDOUT
 from pipes import quote as shellquote
 import logging
-log = logging.getLogger('fedup.util')
+log = logging.getLogger('rhelup.util')
 
 try:
     from ctypes import cdll, c_bool

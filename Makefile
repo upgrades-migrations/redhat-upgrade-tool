@@ -26,10 +26,10 @@ clean: $(CLEAN_TARGETS)
 	rm -rf build
 	rm -f $(ARCHIVE)
 
-ARCHIVE = fedup-$(VERSION).tar.xz
+ARCHIVE = rhelup-$(VERSION).tar.xz
 archive: $(ARCHIVE)
-fedup-$(VERSION).tar.xz:
-	git archive --format=tar --prefix=fedup-$(VERSION)/ HEAD \
+rhelup-$(VERSION).tar.xz:
+	git archive --format=tar --prefix=rhelup-$(VERSION)/ HEAD \
 	  | xz -c > $@ || rm $@
 
 .PHONY: all archive install clean

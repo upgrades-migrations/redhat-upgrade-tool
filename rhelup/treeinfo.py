@@ -25,10 +25,10 @@ The file syntax is the normal ConfigParser .ini-style format.
 A typical .treeinfo file looks like this:
 
     [general]
-    family = Fedora
+    family = Red Hat Enterprise Linux
     timestamp = 1337720130.41
-    variant = Fedora
-    version = 17
+    variant = Server
+    version = 7.0
     packagedir = 
     arch = x86_64
 
@@ -52,8 +52,6 @@ A typical .treeinfo file looks like this:
     images/pxeboot/vmlinuz = sha256:[long hex string]
     repodata/repomd.xml = sha256:[long hex string]
 
-(That's the .treeinfo for Fedora 17 for x86_64 if you couldn't guess.)
-
 Some details about the file format:
 
 * [general] section: general info about this distro tree.
@@ -65,14 +63,14 @@ Some details about the file format:
 
   - 'timestamp' should match the timestamp in other .treeinfo files for other
      arches/variants built as part of the same "compose".
-     (e.g. Fedora 17 x86_64 and Fedora 17 i386 have the same timestamp.)
+     (e.g. RHEL 7.0 x86_64 and RHEL 7.0 i386 have the same timestamp.)
 
   - 'version' is a string, not an integer - "17-Beta" is valid.
   - 'family' is the OS/distro family name, 'variant' is name of the distro
     variant, like "Server" or "Client" or "Workstation".
 
   - 'packagedir' usually points to the directory containing packages, but in
-     Fedora this is ignored in favor of reading repodata/repomd.xml.
+     RHEL this is ignored in favor of reading repodata/repomd.xml.
 
   - 'discnum' and 'totaldiscs' can be used when writing a tree to multiple
      CD/DVD images.
@@ -81,7 +79,7 @@ Some details about the file format:
 * [stage2] section: installer runtime images.
 
   - 'mainimage' will refer to the main installer runtime image, if one exists.
-     In Fedora 17 and later the installer uses this to automatically find
+     In RHEL 7.0 and later the installer uses this to automatically find
      its runtime if you boot with 'inst.repo=url://to/os/tree'.
 
 
@@ -112,11 +110,11 @@ from os.path import join, normpath
 import logging
 from StringIO import StringIO
 
-# TODO: release this separate from fedup so it can be used by other stuff
+# TODO: release this separate from rhelup so it can be used by other stuff
 #       (pungi, libvirt, etc.)
 #log = logging.getLogger('treeinfo')
 #log.addHandler(logging.NullHandler())
-log = logging.getLogger('fedup.treeinfo')
+log = logging.getLogger('rhelup.treeinfo')
 
 def hexdigest(filename, algo, blocksize=8192):
     hasher = hashlib.new(algo)

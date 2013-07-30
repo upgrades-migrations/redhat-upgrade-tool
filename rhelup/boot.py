@@ -1,4 +1,4 @@
-# fedup.boot - bootloader config modification code for the Fedora Upgrader
+# rhelup.boot - bootloader config modification code for the RHEL Upgrader
 #
 # Copyright (C) 2012 Red Hat Inc.
 #

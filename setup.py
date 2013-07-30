@@ -63,17 +63,17 @@ class BuildScripts(build_scripts):
                 log.info("renaming %s -> %s", outfile, basename(newfile))
                 os.rename(outfile, newfile)
 
-setup(name="fedup",
+setup(name="rhelup",
       version="0.7.3",
-      description="Fedora Upgrade",
+      description="RHEL Upgrade",
       long_description="",
       author="Will Woods",
       author_email="wwoods@redhat.com",
-      url="https://github.com/wgwoods/fedup",
-      download_url="https://github.com/wgwoods/fedup/downloads",
+      url="https://github.com/dashea/rhelup",
+      download_url="https://github.com/wgwoods/rhelup/downloads",
       license="GPLv2+",
-      packages=["fedup"],
-      scripts=["fedup.py"],
+      packages=["rhelup"],
+      scripts=["rhelup.py"],
       cmdclass={
         'gettext': Gettext,
         'msgfmt': Msgfmt,

@@ -1,8 +1,7 @@
-fedup.py
-fedup/textoutput.py
-fedup/download.py
-fedup/sysprep.py
-fedup/upgrade.py
-fedup/commandline.py
-fedup/upgrade.py
-ui/fedup.glade
+rhelup.py
+rhelup/textoutput.py
+rhelup/download.py
+rhelup/sysprep.py
+rhelup/upgrade.py
+rhelup/commandline.py
+rhelup/upgrade.py
