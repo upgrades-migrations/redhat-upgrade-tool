@@ -1,4 +1,4 @@
-# fedup.sysprep - utility functions for system prep for Fedora Upgrade
+# sysprep.py - utility functions for system prep
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -18,20 +18,20 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os
-import fedup.boot as boot
 from shutil import copy2
 
-from fedup import _
-from fedup import cachedir, packagedir, packagelist, update_img_dir
-from fedup import upgradeconf, upgradelink, upgraderoot
-from fedup.media import write_systemd_unit
-from fedup.util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
-from fedup.conf import Config
+from . import _
+from . import cachedir, packagedir, packagelist, update_img_dir
+from . import upgradeconf, upgradelink, upgraderoot
+from .media import write_systemd_unit
+from .util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
+from .conf import Config
+from . import boot
 
 import logging
-log = logging.getLogger("fedup.sysprep")
+log = logging.getLogger(__package__+".sysprep")
 
-upgrade_target_wants = "/lib/systemd/system/system-upgrade.target.wants"
+upgrade_target_requires = "/lib/systemd/system/system-upgrade.target.requires"
 
 def link_pkgs(pkgs):
     '''link the named pkgs into packagedir, overwriting existing files.
@@ -102,11 +102,11 @@ def setup_media_mount(mnt):
     log.info("setting up mount for %s at %s", mnt.dev, mountpath)
     mkdir_p(mountpath)
     # make a directory to place a unit
-    mkdir_p(upgrade_target_wants)
+    mkdir_p(upgrade_target_requires)
     # make a modified mnt entry that puts it at mountpath
     mediamnt = mnt._replace(rawmnt=mountpath)
     # finally, write out a systemd unit to mount media there
-    unit = write_systemd_unit(mediamnt, upgrade_target_wants)
+    unit = write_systemd_unit(mediamnt, upgrade_target_requires)
     log.info("wrote %s", unit)
 
 def setup_upgraderoot():
@@ -198,6 +198,6 @@ def remove_cache():
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
     rm_f(upgradelink)
-    for d in (upgraderoot, upgrade_target_wants):
+    for d in (upgraderoot, upgrade_target_requires):
         log.info("removing %s", d)
         rm_rf(d)

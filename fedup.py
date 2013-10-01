@@ -22,14 +22,17 @@
 import os, sys, time
 from subprocess import call
 
-from fedup.download import FedupDownloader, YumBaseError, yum_plugin_for_exc
+from fedup.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from fedup.sysprep import prep_upgrade, prep_boot, setup_media_mount
-from fedup.upgrade import FedupUpgrade, TransactionError
+from fedup.upgrade import RPMUpgrade, TransactionError
 
 from fedup.commandline import parse_args, do_cleanup, device_setup
 from fedup import textoutput as output
 
-import logging, fedup.logutils, fedup.media
+import fedup.logutils as logutils
+import fedup.media as media
+
+import logging
 log = logging.getLogger("fedup")
 def message(m):
     print m
@@ -40,7 +43,7 @@ from fedup import _, kernelpath, initrdpath
 def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
                      enable_plugins=[], disable_plugins=[]):
     log.debug("setup_downloader(version=%s, repos=%s)", version, repos)
-    f = FedupDownloader(version=version, cacheonly=cacheonly)
+    f = UpgradeDownloader(version=version, cacheonly=cacheonly)
     f.preconf.enabled_plugins += enable_plugins
     f.preconf.disabled_plugins += disable_plugins
     f.instrepoid = instrepo
@@ -63,6 +66,12 @@ def download_packages(f):
         print _('Your system is already upgraded!')
         print _('Finished. Nothing to do.')
         raise SystemExit(0)
+    # print dependency problems before we start the upgrade
+    transprobs = f.describe_transaction_problems()
+    if transprobs:
+        print "WARNING: potential problems with upgrade"
+        for p in transprobs:
+            print "  " + p
     # clean out any unneeded packages from the cache
     f.clean_cache(keepfiles=(p.localPkg() for p in updates))
     # download packages
@@ -73,9 +82,10 @@ def download_packages(f):
 def transaction_test(pkgs):
     print _("testing upgrade transaction")
     pkgfiles = set(po.localPkg() for po in pkgs)
-    fu = FedupUpgrade()
-    fu.setup_transaction(pkgfiles=pkgfiles)
-    fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
+    fu = RPMUpgrade()
+    probs = fu.setup_transaction(pkgfiles=pkgfiles, check_fatal=False)
+    rv = fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
+    return (probs, rv)
 
 def reboot():
     call(['systemctl', 'reboot'])
@@ -115,7 +125,7 @@ def main(args):
             print _("The '%s' repo was rejected by yum as invalid.") % args.instrepo
             if args.iso:
                 print _("The given ISO probably isn't an install DVD image.")
-                fedup.media.umount(args.device.mnt)
+                media.umount(args.device.mnt)
             elif args.device:
                 print _("The media doesn't contain a valid install DVD image.")
         else:
@@ -135,7 +145,8 @@ def main(args):
             raise SystemExit(1)
         pkgs = download_packages(f)
         # Run a test transaction
-        transaction_test(pkgs)
+        probs, rv = transaction_test(pkgs)
+
 
     # And prepare for upgrade
     # TODO: use polkit to get root privs for these things
@@ -155,13 +166,23 @@ def main(args):
         setup_media_mount(args.device)
 
     if args.iso:
-        fedup.media.umount(args.device.mnt)
+        media.umount(args.device.mnt)
 
     if args.reboot:
         reboot()
     else:
         print _('Finished. Reboot to start upgrade.')
 
+    # --- Here's where we summarize potential problems. ---
+
+    # list packages without updates, if any
+    missing = sorted(f.find_packages_without_updates(), key=lambda p:p.envra)
+    if missing:
+        message(_('Packages without updates:'))
+        for p in missing:
+            message("  %s" % p)
+
+    # warn if the "important" repos are disabled
     if f.disabled_repos:
         # NOTE: I hate having a hardcoded list of Important Repos here.
         # This information should be provided by the system, somehow..
@@ -173,6 +194,16 @@ def main(args):
         print msg % ", ".join(f.disabled_repos)
         print _("If you start the upgrade now, packages from these repos will not be installed.")
 
+    # warn about broken dependencies etc.
+    if probs:
+        print
+        print _("WARNING: problems were encountered during transaction test:")
+        for s in probs.summaries:
+            print "  "+s.desc
+            for line in s.format_details():
+                print "    "+line
+        print _("Continue with the upgrade at your own risk.")
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -183,8 +214,8 @@ if __name__ == '__main__':
 
     # set up logging
     if args.debuglog:
-        fedup.logutils.debuglog(args.debuglog)
-    fedup.logutils.consolelog(level=args.loglevel)
+        logutils.debuglog(args.debuglog)
+    logutils.consolelog(level=args.loglevel)
     log.info("%s starting at %s", sys.argv[0], time.asctime())
 
     try:

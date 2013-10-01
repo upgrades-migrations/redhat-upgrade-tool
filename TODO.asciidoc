@@ -3,49 +3,9 @@ TODO
 
 _(ordered by priority, roughly)_
 
-Logging::
-  * Log the disk layout (lvs, pvs, blkid, fstab, mounts) in debug log
-  * Use yum's console output for downloads (see bug #981819)
-  ** Or at least show download speed / ETA
-
-Commandline behavior::
-  * Write sys.argv into config file
-  ** use `fedup --continue` to repeat last run
-  ** use `fedup --abort` to delete stored args and remove bootloader config
-  * Don't mess with bootloader unless specifically requested
-  * At end of upgrade: ``Run 'fedup --reboot' to begin upgrade''
-  ** and/or `fedup --start`
-
-Crash handling::
-  * Log state to a file
-  * Display error message, wait for keypress, then reboot:
-  ** "The upgrade failed. Your system has not been harmed. Press <Enter> to
-      restart your system."
-  ** Allow reboot-on-failure (e.g. for remote systems)
-
-Upgrade lock::
-  * If /etc/yum/vars/releasever exists, complain to user (#908017)
-
 Safety checks::
-  * Count/report packages without updates/obsoletes
-  * Report packages with missing deps
-
-Disk space handling::
-  * Pad RPM diskspace check to require more disk
-  * Add `--packagedir` and `--cachedir` flags
-
-ISO/Device/"Offline" upgrades::
-  * Handle ISO-on-USB-stick case
-  * Handle mount chains deeper than ISO-on-USB
-
-Updates::
-  * Scheme for associating updates images with upgrade.img vintages
-
-GUI::
-  * Wire up the UI bits
-  * Wire up progress callbacks
-  ** yum in a subprocess
-  *** use `multiprocessing.Queue` to send back progress data?
+  * Check to make sure packages in `package.list` all exist
+  * If /etc/yum/vars/releasever exists, complain to user (#908017)
 
 Migration::
   * Add a _fedup-before-upgrade_ scriptlet hook
@@ -56,14 +16,67 @@ Migration::
   *** https://bugzilla.redhat.com/show_bug.cgi?id=881670[Bug #881670]:
       Add x-systemd.device-timeout=0 for mounts that need it
 
-Docs::
-  * man pages for services
-  * man pages for targets
-  * document boot args
+Disk space handling::
+  * Pad RPM diskspace check to require more disk
+  * Add `--packagedir` and `--cachedir` flags
+
+Crash handling::
+  * Log state to a file
+  * Display error message, wait for keypress, then reboot:
+  ** "The upgrade failed. Your system has not been harmed. Press <Enter> to
+      restart your system."
+  ** Allow reboot-on-failure (e.g. for remote systems)
+
+Downloading::
+  * Do async/multithreaded downloads
+  ** See https://github.com/wgwoods/fedup/pull/8
+  *** Need to fix the console output, though...
+  * Use yum's console output for downloads (see bug #981819)
+  ** Or at least show download speed / ETA
+
+Logging::
+  * Log the disk layout (lvs, pvs, blkid, fstab, mounts) in debug log
+
+Commandline behavior::
+  * Write sys.argv into config file
+  ** use `fedup --continue` to repeat last run
+  ** use `fedup --abort` to delete stored args and remove bootloader config
+  * Don't mess with bootloader unless specifically requested
+  * At end of upgrade: ``Run 'fedup --reboot' to begin upgrade''
+  ** and/or `fedup --start`
+
+distro-sync mode::
+  * Add `--distro-sync` flag (or similar)
+  * Download packages from new repos, even if they're older
+  ** How does yum implement this?
+  * Need to pass along a flag (in upgrade.conf?) to the upgrade tool
+
+update-groups mode::
+  * Add `--update-groups` flag (or similar)
+  * Reinstall each group that yum lists as installed (see yum.igroups)
+  ** Extra argument for mandatory vs. default
+
+ISO/Device/"Offline" upgrades::
+  * Handle ISO-on-USB-stick case
+  * Handle mount chains deeper than ISO-on-USB
 
 Upstreaming::
   * systemd: get system-upgrade.target, system-upgrade-generator upstream
   ** Parallel with http://freedesktop.org/wiki/Software/systemd/SystemUpdates/
+
+Updates::
+  * Scheme for associating updates images with upgrade.img vintages
+
+GUI::
+  * Wire up the UI bits
+  * Wire up progress callbacks
+  ** yum in a subprocess
+  *** use `multiprocessing.Queue` to send back progress data?
+
+Docs::
+  * man pages for services
+  * man pages for targets
+  * document boot args
 
 SELinux::
   * Find a way to run upgrade with SELinux enforcing
