@@ -1,4 +1,4 @@
-# rhelup.conf - config parser for RHEL Upgrade
+# conf.py - config parser
 #
 # Copyright (C) 2012 Red Hat Inc.
 #

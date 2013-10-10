@@ -1,4 +1,4 @@
-# rhelup.download - yum-based download/depsolver for RHEL Upgrade
+# download.py - yum-based download/depsolver for system upgrades
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -19,27 +19,30 @@
 
 import os
 import yum
+import struct
 import logging
-from rhelup.callback import BaseTsCallback
-from rhelup.treeinfo import Treeinfo, TreeinfoError
-from rhelup.conf import Config
+from .callback import BaseTsCallback
+from .treeinfo import Treeinfo, TreeinfoError
+from .conf import Config
 from yum.Errors import YumBaseError
 from yum.parser import varReplace
+from yum.constants import TS_REMOVE_STATES
+from yum.misc import gpgme
 
 enabled_plugins = ['blacklist', 'whiteout']
 disabled_plugins = ['rpm-warm-cache', 'remove-with-leaves', 'presto',
                     'auto-update-debuginfo', 'refresh-packagekit']
 
-from rhelup import _
-from rhelup import cachedir, upgradeconf, kernelpath, initrdpath
-from rhelup import mirrormanager
-from rhelup.util import listdir, mkdir_p
+from . import _
+from . import cachedir, upgradeconf, kernelpath, initrdpath, defaultkey
+from . import mirrormanager
+from .util import listdir, mkdir_p
 from shutil import copy2
 
-log = logging.getLogger("rhelup.yum") # XXX maybe I should rename this module..
+log = logging.getLogger(__package__+".yum") # maybe I should rename this..
 
 # TODO: add --urlgrabdebug to enable this... or something
-#yum.urlgrabber.grabber.set_logger(logging.getLogger("rhelup.urlgrab"))
+#yum.urlgrabber.grabber.set_logger(logging.getLogger(__package__+".urlgrab"))
 
 def mirrorlist(repo, arch='$basearch'):
     return mirrormanager + '?repo=%s&arch=%s' % (repo, arch)
@@ -47,12 +50,24 @@ def mirrorlist(repo, arch='$basearch'):
 def raise_exception(failobj):
     raise failobj.exception
 
-class RHELupDownloader(yum.YumBase):
-    '''Yum-based downloader class for rhelup. Based roughly on AnacondaYum.'''
+pluginpath = []
+def yum_plugin_for_exc():
+    import sys, traceback
+    tb_files = [i[0] for i in traceback.extract_tb(sys.exc_info()[2])]
+    log.debug("checking traceback files: %s", tb_files)
+    log.debug("plugin path is %s", pluginpath)
+    for f in tb_files:
+        for p in pluginpath:
+            if f.startswith(p):
+                return f
+    return None
+
+class UpgradeDownloader(yum.YumBase):
+    '''Yum-based downloader class. Based roughly on AnacondaYum.'''
     def __init__(self, version=None, cachedir=cachedir, cacheonly=False):
         # TODO: special handling for version='test' where we just synthesize
         #       a bunch of fake RPMs with interesting properties
-        log.info("RHELupDownloader(version=%s, cachedir=%s)", version, cachedir)
+        log.info("UpgradeDownloader(version=%s,cachedir=%s)",version,cachedir)
         yum.YumBase.__init__(self)
         self.use_txmbr_in_callback = True
         self.preconf.debuglevel = -1
@@ -80,8 +95,16 @@ class RHELupDownloader(yum.YumBase):
             # override some of yum's defaults
             conf.disable_excludes = ['all']
             conf.cache = self.cacheonly
+            conf.deltarpm = 0
             log.debug("conf.cache=%i", conf.cache)
         return conf
+
+    def doPluginSetup(self, *args, **kwargs):
+        yum.YumBase.doPluginSetup(self, *args, **kwargs)
+        # Now that plugins have been set up, let's save some info about them
+        global pluginpath
+        pluginpath = self.plugins.searchpath
+        log.info("enabled plugins: %s", self.plugins._plugins.keys())
 
     def add_repo(self, repoid, baseurls=[], mirrorlist=None, **kwargs):
         '''like add_enable_repo, but doesn't do initial repo setup and doesn't
@@ -110,11 +133,13 @@ class RHELupDownloader(yum.YumBase):
         # TODO invalidate cache if the version doesn't match previous version
         log.info("checking repos")
 
-        # Add default instrepo if needed
+        # Add default instrepo (and its key) if needed
         if self.instrepoid is None:
             self.instrepoid = 'default-installrepo'
+            # FIXME: hardcoded and RedHat-specific
             mirrorurl = mirrorlist('redhat-install-$releasever')
             repos.append(('add', '%s=@%s' % (self.instrepoid, mirrorurl)))
+            repos.append(('gpgkey', '%s=%s' % (self.instrepoid, defaultkey)))
 
         # We need to read .repo files before we can enable/disable them, so:
         self.repos # implicit repo setup! ha ha! what fun!
@@ -141,6 +166,14 @@ class RHELupDownloader(yum.YumBase):
                     repo.proxy_username = self.conf.proxy_username
                     repo.proxy_password = self.conf.proxy_password
 
+        # add GPG keys *after* the repos are created
+        for action, repo in repos:
+            if action == 'gpgkey':
+                (repoid, keyurl) = repo.split('=',1)
+                repo = self.repos.getRepo(repoid)
+                repo.gpgkey.append(varReplace(keyurl, self.conf.yumvar))
+                repo.gpgcheck = True
+
         # check enabled repos
         for repo in self.repos.listEnabled():
             try:
@@ -151,6 +184,10 @@ class RHELupDownloader(yum.YumBase):
                 self.disabled_repos.append(repo.id)
             else:
                 log.info("repo %s seems OK" % repo.id)
+
+            # Disable gpg key checking for the repos, if requested
+            if self._override_sigchecks:
+                repo._override_sigchecks = True
 
         log.debug("repos.cache=%i", self.repos.cache)
 
@@ -174,6 +211,7 @@ class RHELupDownloader(yum.YumBase):
         self.dsCallback = callback
         self.update()
         (rv, msgs) = self.buildTransaction(unfinished_transactions_check=False)
+        # NOTE: self.po_with_problems is now a list of (po1, po2, errmsg) tuples
         log.info("buildTransaction returned %i", rv)
         for m in msgs:
             log.info("    %s", m)
@@ -181,6 +219,45 @@ class RHELupDownloader(yum.YumBase):
         self.dsCallback = None
         return [t.po for t in self.tsInfo.getMembers()
                      if t.ts_state in ("i", "u")]
+
+    def find_packages_without_updates(self):
+        '''packages on the local system that aren't being updated/obsoleted'''
+        remove = self.tsInfo.getMembersWithState(output_states=TS_REMOVE_STATES)
+        return set(p for p in self.rpmdb if p not in remove)
+
+    def describe_transaction_problems(self):
+        problems = []
+
+        def find_replacement(po):
+            for tx in self.tsInfo.getMembers(po.pkgtup):
+                # XXX multiple replacers?
+                for otherpo, rel in tx.relatedto:
+                    if rel in ('obsoletedby', 'updatedby'):
+                        return po, otherpo
+                    if rel in ('obsoletes', 'updates'):
+                        return otherpo, po
+            if po in self.rpmdb:
+                return po, None
+            else:
+                return None, po
+
+        def format_replacement(po):
+            oldpkg, newpkg = find_replacement(po)
+            if oldpkg and newpkg:
+                return "%s (replaced by %s)" % (oldpkg, newpkg)
+            elif oldpkg:
+                return "%s (no replacement)" % oldpkg
+            elif newpkg:
+                return "%s (new package)" % newpkg
+
+        done = set()
+        for pkg1, pkg2, err in self.po_with_problems:
+            if (pkg1,pkg2) not in done:
+                problems.append("%s requires %s" % (format_replacement(pkg1),
+                                                    format_replacement(pkg2)))
+                done.add((pkg1,pkg2))
+
+        return problems
 
     def download_packages(self, pkgs, callback=None):
         # Verifying a full upgrade payload of ~2000 pkgs takes a good 90-120
@@ -198,13 +275,20 @@ class RHELupDownloader(yum.YumBase):
             ok = self.verifyPkg(local, p, False) # result will be cached by yum
         log.info("beginning package download...")
         updates = self._downloadPackages(callback)
+
+        # Handle _downloadPackages returning None instead of an empty list
+        if updates is None:
+            updates = []
+
         if set(updates) != set(pkgs):
             log.debug("differences between requested pkg set and downloaded:")
             for p in set(pkgs).difference(updates):
                 log.debug("  -%s", p)
             for p in set(updates).difference(pkgs):
                 log.debug("  +%s", p)
-        # TODO check signatures of downloaded packages
+        # check signatures of downloaded packages
+        if updates:
+            self._checkSignatures(updates, callback)
 
     def clean_cache(self, keepfiles):
         log.info("checking for unneeded rpms in cache")
@@ -219,6 +303,50 @@ class RHELupDownloader(yum.YumBase):
                 log.info("failed to remove %s", f)
         # TODO remove dirs that don't belong to any repo
 
+    def _import_key(self, keyurl, gpgdir=cachedir+'/gpgdir'):
+        log.info("importing keys from %s", keyurl)
+        keys = self._retrievePublicKey(keyurl) # XXX getSig?
+        for info in keys:
+            log.debug("importing key %s", info['hexkeyid'].lower())
+            yum.misc.import_key_to_pubring(info['raw_key'], info['hexkeyid'],
+                                           gpgdir=gpgdir)
+
+    def _get_treeinfo(self):
+        mkdir_p(cachedir)
+        outfile = os.path.join(cachedir, '.treeinfo')
+
+        if self.cacheonly:
+            log.debug("using cached .treeinfo %s", outfile)
+            return outfile
+
+        if self.instrepo.gpgcheck and not self._override_sigchecks:
+            log.debug("fetching .treeinfo.signed from '%s'", self.instrepoid)
+            fn = self.instrepo.grab.urlgrab('.treeinfo.signed',
+                                            outfile+'.signed',
+                                            reget=None)
+
+            # try to import key(s) into our personal keyring
+            log.info("checking GPG keys for instrepo")
+            for k in self.instrepo.gpgkey:
+                if self.check_keyfile(k):
+                    self._import_key(k)
+
+            try:
+                log.info("verifying .treeinfo.signed")
+                # verify file and write plaintext to outfile
+                errs = self.check_signed_file(fn, outfile)
+            except gpgme.GpgmeError:
+                raise yum.Errors.YumGPGCheckError(e.strerror)
+            if errs:
+                raise yum.Errors.YumGPGCheckError(', '.join(errs))
+            return outfile
+
+        else:
+            log.debug("fetching .treeinfo from '%s'", self.instrepoid)
+            fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
+                                            reget=None)
+            return fn
+
     @property
     def instrepo(self):
         return self.repos.getRepo(self.instrepoid)
@@ -226,19 +354,8 @@ class RHELupDownloader(yum.YumBase):
     @property
     def treeinfo(self):
         if self._treeinfo is None:
-            mkdir_p(cachedir)
-            outfile = os.path.join(cachedir, '.treeinfo')
-            if self.cacheonly:
-                log.debug("using cached .treeinfo %s", outfile)
-                self._treeinfo = Treeinfo(outfile)
-            else:
-                log.debug("fetching .treeinfo from repo '%s'", self.instrepoid)
-                if os.path.exists(outfile):
-                    os.remove(outfile)
-                fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
-                                                reget=None)
-                self._treeinfo = Treeinfo(fn)
-                log.debug(".treeinfo saved at %s", fn)
+            self._treeinfo = Treeinfo(self._get_treeinfo())
+            log.debug("validating .treeinfo")
             self._treeinfo.checkvalues()
         return self._treeinfo
 
@@ -275,6 +392,8 @@ class RHELupDownloader(yum.YumBase):
             initrd = initrdpath
         except TreeinfoError as e:
             raise YumBaseError(_("invalid data in .treeinfo: %s") % str(e))
+        except yum.Errors.YumGPGCheckError as e:
+            raise YumBaseError(_("could not verify GPG signature: %s") % str(e))
         except yum.URLGrabError as e:
             err = e.strerror
             if e.errno == 256:
@@ -286,6 +405,9 @@ class RHELupDownloader(yum.YumBase):
             # But urlgrabber.__version__ hasn't been changed since F12, so:
             if not hasattr(yum.urlgrabber.grabber, 'exception2msg'): # <=F17
                 raise KeyboardInterrupt(_("or possible error writing file"))
+            else:
+                # The exception actually was a KeyBoardInterrupt, re-raise it
+                raise
 
         # Save kernel/initrd info so we can clean it up later
         mkdir_p(os.path.dirname(upgradeconf))
@@ -294,3 +416,128 @@ class RHELupDownloader(yum.YumBase):
             conf.set("boot", "initrd", initrd)
 
         return kernel, initrd
+
+    def _checkSignatures(self, pkgs, callback):
+        '''check the package signatures and get keys if needed.
+           works like YumBase._checkSignatures() except it only uses our
+           special automatic _GPGKeyCheck to import untrusted keys.'''
+        for po in pkgs:
+            result, errmsg = self.sigCheckPkg(po)
+            if result == 0:
+                continue
+            elif result == 1:
+                keycheck = lambda info: self._GPGKeyCheck(info, callback)
+                self.getKeyForPackage(po, fullaskcb=keycheck)
+            else:
+                raise yum.Errors.YumGPGCheckError(errmsg)
+
+    def _GPGKeyCheck(self, info, callback=None):
+        '''special key importer: import trusted keys automatically'''
+        if info['keyurl'].startswith("file://"):
+            keyfile = info['keyurl'][7:]
+        else:
+            return False
+        po = info['po']
+        log.info("repo '%s' wants to import key %s", po.repoid, keyfile)
+        if self.check_keyfile(keyfile):
+            log.info("key was installed by signed, trusted package - importing")
+            return True
+        else:
+            log.info("no automatic trust for key %s")
+            return False
+
+    def check_keyfile(self, keyfile):
+        '''
+        If a keyfile was installed by a package that was signed with a trusted
+        key (and the key hasn't been modified or tampered with), we can assume
+        that the key is trustworthy.
+
+        This is kind of a roundabout way to establish trust between the two
+        keys. It'd be a lot more straightforward if we just signed the new
+        release key with the old release key - "If you trust this, you can
+        trust this too.."
+        '''
+        if keyfile.startswith('file://'):
+            keyfile = keyfile[7:]
+        # did the key come from a package?
+        keypkgs = self.rpmdb.searchFiles(keyfile)
+        if keypkgs:
+            keypkg = sorted(keypkgs)[-1]
+            log.debug("%s is owned by %s", keyfile, keypkg.nevr)
+        if not keypkgs:
+            log.info("%s does not belong to any package", keyfile)
+            return False
+
+        # was that package signed?
+        hdr = keypkg.returnLocalHeader()
+        if hdr.sigpgp or hdr.siggpg:
+            sigdata = hdr.sigpgp or hdr.siggpg
+            siginfo = yum.pgpmsg.decode(sigdata)[0]
+            (keyid,) = struct.unpack('>Q', siginfo.key_id())
+            hexkeyid = yum.misc.keyIdToRPMVer(keyid)
+            log.debug("%s is signed with key %s", keypkg.nevr, hexkeyid)
+        else:
+            log.info("%s unsigned", keypkg.nevr)
+            return False
+
+        # do we trust the key that signed it?
+        if yum.misc.keyInstalled(self.ts, keyid, 0):
+            log.debug("key %s is trusted by rpmdb", hexkeyid)
+        else:
+            log.info("key %s is not trusted", hexkeyid)
+            return False
+
+        # has the key been tampered with?
+        problems = keypkg.verify([keyfile]).get(keyfile, [])
+        if problems:
+            log.info("%s does not match packaged file (%s)",
+                     keyfile, " ".join(p.type for p in problems))
+            return False
+
+        # everything checks out OK!
+        return True
+
+    def check_signed_file(self, signedfile, outfile, gpgdir=cachedir+'/gpgdir'):
+        '''
+        uses the keys trusted by RPM to verify signedfile.
+        writes the resulting plaintext to outfile.
+        returns a list of unicode strings describing any errors in verification.
+        if the list is empty, the verification was successful.
+
+        It'd be great if RPM could do this for us, since it already has all the
+        keys imported and has its own signature verification code, but AFAICT
+        it doesn't (at least not in any way reachable from Python), so..
+        '''
+        if self._override_sigchecks:
+            return []
+        # set up gpgdir
+        if not os.path.isdir(gpgdir):
+            log.debug("creating gpgdir %s", gpgdir)
+            os.makedirs(gpgdir, 0o700)
+        else:
+            os.chmod(gpgdir, 0o700)
+        os.environ['GNUPGHOME'] = gpgdir
+
+        # import trusted keys from rpmdb
+        log.debug("checking rpmdb trusted keys")
+        pubring_keys = [yum.misc.keyIdToRPMVer(int(k, 16))
+                        for k in yum.misc.return_keyids_from_pubring(gpgdir)]
+        for hdr in self.ts.dbMatch('name', 'gpg-pubkey'):
+            if hdr.version not in pubring_keys:
+                log.debug("importing key %s", hdr.version)
+                yum.misc.import_key_to_pubring(hdr.description, hdr.version,
+                                            gpgdir=gpgdir, make_ro_copy=False)
+            else:
+                log.debug("key %s is already in keyring", hdr.version)
+
+        # verify the signed file, writing plaintext to outfile
+        with open(signedfile) as inf, open(outfile, 'w') as outf:
+            ctx = gpgme.Context()
+            sigresults = ctx.verify(inf, None, outf)
+        # return a list of error messages. if it's empty, we're OK.
+        # NOTE: this is enough detail for current use cases, but it's very
+        # possible we'll want/need to just return sigresults and let the caller
+        # sort out the details..
+        return [sig.status.message for sig in sigresults if not (
+                     sig.summary & gpgme.SIGSUM_VALID and
+                     sig.validity >= gpgme.VALIDITY_FULL)]

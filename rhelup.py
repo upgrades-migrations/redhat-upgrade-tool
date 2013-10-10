@@ -22,14 +22,17 @@
 import os, sys, time
 
 from rhelup.util import call
-from rhelup.download import RHELupDownloader, YumBaseError
+from rhelup.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from rhelup.sysprep import prep_upgrade, prep_boot, setup_media_mount
-from rhelup.upgrade import RHELupUpgrade, TransactionError
+from rhelup.upgrade import RPMUpgrade, TransactionError
 
 from rhelup.commandline import parse_args, do_cleanup, device_setup
 from rhelup import textoutput as output
 
-import logging, rhelup.logutils, rhelup.media
+import rhelup.logutils as logutils
+import rhelup.media as media
+
+import logging
 log = logging.getLogger("rhelup")
 def message(m):
     print m
@@ -37,9 +40,12 @@ def message(m):
 
 from rhelup import _, kernelpath, initrdpath
 
-def setup_downloader(version, instrepo=None, cacheonly=False, repos=[]):
+def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
+                     enable_plugins=[], disable_plugins=[]):
     log.debug("setup_downloader(version=%s, repos=%s)", version, repos)
-    f = RHELupDownloader(version=version, cacheonly=cacheonly)
+    f = UpgradeDownloader(version=version, cacheonly=cacheonly)
+    f.preconf.enabled_plugins += enable_plugins
+    f.preconf.disabled_plugins += disable_plugins
     f.instrepoid = instrepo
     repo_cb = output.RepoCallback()
     repo_prog = output.RepoProgress(fo=sys.stderr)
@@ -60,6 +66,12 @@ def download_packages(f):
         print _('Your system is already upgraded!')
         print _('Finished. Nothing to do.')
         raise SystemExit(0)
+    # print dependency problems before we start the upgrade
+    transprobs = f.describe_transaction_problems()
+    if transprobs:
+        print "WARNING: potential problems with upgrade"
+        for p in transprobs:
+            print "  " + p
     # clean out any unneeded packages from the cache
     f.clean_cache(keepfiles=(p.localPkg() for p in updates))
     # download packages
@@ -70,9 +82,10 @@ def download_packages(f):
 def transaction_test(pkgs):
     print _("testing upgrade transaction")
     pkgfiles = set(po.localPkg() for po in pkgs)
-    fu = RHELupUpgrade()
-    fu.setup_transaction(pkgfiles=pkgfiles)
-    fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
+    fu = RPMUpgrade()
+    probs = fu.setup_transaction(pkgfiles=pkgfiles, check_fatal=False)
+    rv = fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
+    return (probs, rv)
 
 def reboot():
     call(['systemctl', 'reboot'])
@@ -90,7 +103,12 @@ def main(args):
     f = setup_downloader(version=args.network,
                          cacheonly=args.cacheonly,
                          instrepo=args.instrepo,
-                         repos=args.repos)
+                         repos=args.repos,
+                         enable_plugins=args.enable_plugins,
+                         disable_plugins=args.disable_plugins)
+
+    if args.nogpgcheck:
+        f._override_sigchecks = True
 
     if args.expire_cache:
         print "expiring cache files"
@@ -101,6 +119,7 @@ def main(args):
         f.cleanMetadata()
         return
 
+    # TODO: error msg generation should be shared between CLI and GUI
     if args.skipkernel:
         message("skipping kernel/initrd download")
     elif f.instrepoid is None or f.instrepoid in f.disabled_repos:
@@ -109,11 +128,12 @@ def main(args):
             print _("The '%s' repo was rejected by yum as invalid.") % args.instrepo
             if args.iso:
                 print _("The given ISO probably isn't an install DVD image.")
+                media.umount(args.device.mnt)
             elif args.device:
                 print _("The media doesn't contain a valid install DVD image.")
         else:
-            print _("The installation repo isn't available.")
-            print "You need to specify one with --instrepo." # XXX temporary
+            print _("The installation repo isn't currently available.")
+            print _("Try again later, or specify a repo using --instrepo.")
         raise SystemExit(1)
     else:
         print _("getting boot images...")
@@ -128,7 +148,8 @@ def main(args):
             raise SystemExit(1)
         pkgs = download_packages(f)
         # Run a test transaction
-        transaction_test(pkgs)
+        probs, rv = transaction_test(pkgs)
+
 
     # And prepare for upgrade
     # TODO: use polkit to get root privs for these things
@@ -148,13 +169,23 @@ def main(args):
         setup_media_mount(args.device)
 
     if args.iso:
-        rhelup.media.umount(args.device.mnt)
+        media.umount(args.device.mnt)
 
     if args.reboot:
         reboot()
     else:
         print _('Finished. Reboot to start upgrade.')
 
+    # --- Here's where we summarize potential problems. ---
+
+    # list packages without updates, if any
+    missing = sorted(f.find_packages_without_updates(), key=lambda p:p.envra)
+    if missing:
+        message(_('Packages without updates:'))
+        for p in missing:
+            message("  %s" % p)
+
+    # warn if the "important" repos are disabled
     #if f.disabled_repos:
         # NOTE: I hate having a hardcoded list of Important Repos here.
         # This information should be provided by the system, somehow..
@@ -166,6 +197,16 @@ def main(args):
         #print msg % ", ".join(f.disabled_repos)
         #print _("If you start the upgrade now, packages from these repos will not be installed.")
 
+    # warn about broken dependencies etc.
+    if probs:
+        print
+        print _("WARNING: problems were encountered during transaction test:")
+        for s in probs.summaries:
+            print "  "+s.desc
+            for line in s.format_details():
+                print "    "+line
+        print _("Continue with the upgrade at your own risk.")
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -176,8 +217,8 @@ if __name__ == '__main__':
 
     # set up logging
     if args.debuglog:
-        rhelup.logutils.debuglog(args.debuglog)
-    rhelup.logutils.consolelog(level=args.loglevel)
+        logutils.debuglog(args.debuglog)
+    logutils.consolelog(level=args.loglevel)
     log.info("%s starting at %s", sys.argv[0], time.asctime())
 
     try:
@@ -210,6 +251,13 @@ if __name__ == '__main__':
         log.error(_("Upgrade test failed."))
         raise SystemExit(3)
     except Exception as e:
+        pluginfile = yum_plugin_for_exc()
+        if pluginfile:
+            plugin, ext = os.path.splitext(os.path.basename(pluginfile))
+            log.error(_("The '%s' yum plugin has crashed.") % plugin)
+            log.error(_("Please report this problem to the plugin developers:"),
+                      exc_info=True)
+            raise SystemExit(1)
         log.info("Exception:", exc_info=True)
         raise
     finally:

@@ -1,4 +1,4 @@
-# rhelup.util - various shared utility functions for rhelup
+# util.py - various shared utility functions
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -23,6 +23,9 @@ from subprocess import Popen, CalledProcessError, PIPE, STDOUT
 from pipes import quote as shellquote
 import logging
 log = logging.getLogger('rhelup.util')
+
+import logging
+log = logging.getLogger(__package__+".util")
 
 try:
     from ctypes import cdll, c_bool
@@ -55,6 +58,11 @@ def check_call(cmd, *pargs, **kwargs):
 def listdir(d):
     for f in os.listdir(d):
         yield os.path.join(d, f)
+
+def rlistdir(d):
+    for root, files, dirs in os.walk(d):
+        for f in files:
+            yield os.path.join(root, f)
 
 def mkdir_p(d):
     try:

@@ -1,4 +1,4 @@
-# __init__.py for rhelup - the RHEL Upgrade python package
+# __init__.py for the system upgrade python package
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -17,27 +17,42 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
+'''
+NOTE WELL, DEAR READER: None of this is intended as a public API!  I reserve
+the right to change anything and everything about how this library works at the
+merest whim.
+
+If you're actually trying to write something that uses this library, please
+contact me (or whatever people/constructs are maintaining this after I quit
+computers forever) to discuss how we could best design a sensible API that
+would actually work for you.
+
+Your pal,
+-w
+'''
+
 import logging
-from rhelup.logutils import NullHandler
-log = logging.getLogger("rhelup")
+from .logutils import NullHandler
+log = logging.getLogger(__package__)
 log.addHandler(NullHandler())
 
 import gettext
-t = gettext.translation("rhelup", "/usr/share/locale", fallback=True)
+t = gettext.translation(__package__, "/usr/share/locale", fallback=True)
 _ = t.lgettext
 
-kernel_id = 'rhelup'
+kernel_id = __package__
 # NOTE: new-kernel-pkg requires this kernel name/path
 kernelpath = '/boot/vmlinuz-%s' % kernel_id
 initrdpath = '/boot/initramfs-%s.img' % kernel_id
 
-cachedir = '/var/tmp/rhelup-upgrade'
-packagedir = '/var/lib/rhelup-upgrade'
+cachedir = '/var/tmp/system-upgrade'
+packagedir = '/var/lib/system-upgrade'
 packagelist = packagedir + '/package.list'
 upgradeconf = packagedir + '/upgrade.conf'
 upgradelink = '/system-upgrade'
 upgraderoot = '/system-upgrade-root'
 
 mirrormanager = ''
+defaultkey = ''
 
-update_img_dir = '/etc/rhelup/update.img.d'
+update_img_dir = '/etc/' + __package__ + '/update.img.d'
