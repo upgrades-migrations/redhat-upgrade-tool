@@ -17,7 +17,8 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, argparse, platform
+import os, optparse, platform, sys
+from copy import copy
 
 from . import media
 from .sysprep import reset_boot, remove_boot, remove_cache, misc_cleanup
@@ -27,91 +28,91 @@ import logging
 log = logging.getLogger(__package__)
 
 def parse_args(gui=False):
-    p = argparse.ArgumentParser(
+    p = optparse.OptionParser(option_class=Option,
         description=_('Prepare system for upgrade.'),
         # Translators: This is the CLI's "usage:" string
-        usage=_('%(prog)s <SOURCE> [options]'),
+        usage=_('%(prog)s <SOURCE> [options]' % {'prog': os.path.basename(sys.argv[0])}),
     )
 
     # === basic options ===
-    p.add_argument('-v', '--verbose', action='store_const', dest='loglevel',
+    p.add_option('-v', '--verbose', action='store_const', dest='loglevel',
         const=logging.INFO, help=_('print more info'))
-    p.add_argument('-d', '--debug', action='store_const', dest='loglevel',
+    p.add_option('-d', '--debug', action='store_const', dest='loglevel',
         const=logging.DEBUG, help=_('print lots of debugging info'))
     p.set_defaults(loglevel=logging.WARNING)
 
-    p.add_argument('--debuglog', default='/var/log/%s.log' % __package__,
+    p.add_option('--debuglog', default='/var/log/%s.log' % __package__,
         help=_('write lots of debugging output to the given file'))
 
-    p.add_argument('--reboot', action='store_true', default=False,
+    p.add_option('--reboot', action='store_true', default=False,
         help=_('automatically reboot to start the upgrade when ready'))
 
 
     # === hidden options. FOR DEBUGGING ONLY. ===
-    p.add_argument('--skippkgs', action='store_true', default=False,
-        help=argparse.SUPPRESS)
-    p.add_argument('--skipkernel', action='store_true', default=False,
-        help=argparse.SUPPRESS)
-    p.add_argument('--skipbootloader', action='store_true', default=False,
-        help=argparse.SUPPRESS)
-    p.add_argument('-C', '--cacheonly', action='store_true', default=False,
-        help=argparse.SUPPRESS)
+    p.add_option('--skippkgs', action='store_true', default=False,
+        help=optparse.SUPPRESS_HELP)
+    p.add_option('--skipkernel', action='store_true', default=False,
+        help=optparse.SUPPRESS_HELP)
+    p.add_option('--skipbootloader', action='store_true', default=False,
+        help=optparse.SUPPRESS_HELP)
+    p.add_option('-C', '--cacheonly', action='store_true', default=False,
+        help=optparse.SUPPRESS_HELP)
 
 
     # === yum options ===
-    yumopts = p.add_argument_group(_('yum options'))
-    yumopts.add_argument('--enableplugin', metavar='PLUGIN',
+    yumopts = p.add_option_group(_('yum options'))
+    yumopts.add_option('--enableplugin', metavar='PLUGIN',
         action='append', dest='enable_plugins', default=[],
         help=_('enable yum plugins by name'))
-    yumopts.add_argument('--disableplugin', metavar='PLUGIN',
+    yumopts.add_option('--disableplugin', metavar='PLUGIN',
         action='append', dest='disable_plugins', default=[],
         help=_('disable yum plugins by name'))
-    yumopts.add_argument('--nogpgcheck', action='store_true', default=False,
+    yumopts.add_option('--nogpgcheck', action='store_true', default=False,
         help=_('disable GPG signature checking'))
 
 
     # === <SOURCE> options ===
-    req = p.add_argument_group(_('options for <SOURCE>'),
+    req = p.add_option_group(_('options for <SOURCE>'),
                                _('Location to search for upgrade data.'))
-    req.add_argument('--device', metavar='DEV', nargs='?',
-        type=device_or_mnt, const='auto',
+    req.add_option('--device', metavar='DEV',
+        type="device_or_mnt",
         help=_('device or mountpoint. default: check mounted devices'))
-    req.add_argument('--iso', type=isofile,
+    req.add_option('--iso', type="isofile",
         help=_('installation image file'))
     # Translators: This is for '--network [VERSION]' in --help output
-    req.add_argument('--network', metavar=_('VERSION'), type=VERSION,
+    req.add_option('--network', metavar=_('VERSION'), type="VERSION",
         help=_('online repos matching VERSION (a number or "rawhide")'))
 
 
     # === options for --network ===
-    net = p.add_argument_group(_('additional options for --network'))
-    net.add_argument('--enablerepo', metavar='REPOID', action=RepoAction,
-        dest='repos', help=_('enable one or more repos (wildcards allowed)'))
-    net.add_argument('--disablerepo', metavar='REPOID', action=RepoAction,
-        dest='repos', help=_('disable one or more repos (wildcards allowed)'))
-    net.add_argument('--repourl', metavar='REPOID=URL', action=RepoAction,
-        dest='repos', help=argparse.SUPPRESS)
-    net.add_argument('--addrepo', metavar='REPOID=[@]URL',
-        action=RepoAction, dest='repos',
+    net = p.add_option_group(_('additional options for --network'))
+    net.add_option('--enablerepo', metavar='REPOID', action='callback', callback=repoaction,
+        dest='repos', type=str, help=_('enable one or more repos (wildcards allowed)'))
+    net.add_option('--disablerepo', metavar='REPOID', action='callback', callback=repoaction,
+        dest='repos', type=str, help=_('disable one or more repos (wildcards allowed)'))
+    net.add_option('--repourl', metavar='REPOID=URL', action='callback', callback=repoaction,
+        dest='repos', type=str, help=optparse.SUPPRESS_HELP)
+    net.add_option('--addrepo', metavar='REPOID=[@]URL',
+        action='callback', callback=repoaction, dest='repos', type=str,
         help=_('add the repo at URL (@URL for mirrorlist)'))
-    net.add_argument('--instrepo', metavar='REPOID', type=str,
+    net.add_option('--instrepo', metavar='REPOID', type=str,
         help=_('get upgrader boot images from REPOID (default: auto)'))
     p.set_defaults(repos=[])
 
     if not gui:
-        clean = p.add_argument_group(_('cleanup commands'))
+        clean = p.add_option_group(_('cleanup commands'))
 
-        clean.add_argument('--resetbootloader', action='store_const',
+        clean.add_option('--resetbootloader', action='store_const',
             dest='clean', const='bootloader', default=None,
             help=_('remove any modifications made to bootloader'))
-        clean.add_argument('--clean', action='store_const', const='all',
+        clean.add_option('--clean', action='store_const', const='all',
             help=_('clean up everything written by %s') % __package__)
-        p.add_argument('--expire-cache', action='store_true', default=False,
-            help=argparse.SUPPRESS)
-        p.add_argument('--clean-metadata', action='store_true', default=False,
-            help=argparse.SUPPRESS)
+        p.add_option('--expire-cache', action='store_true', default=False,
+            help=optparse.SUPPRESS_HELP)
+        p.add_option('--clean-metadata', action='store_true', default=False,
+            help=optparse.SUPPRESS_HELP)
 
-    args = p.parse_args()
+    args, _leftover = p.parse_args()
 
     if not (gui or args.network or args.device or args.iso or args.clean):
         p.error(_('SOURCE is required (--network, --device, --iso)'))
@@ -127,23 +128,24 @@ def parse_args(gui=False):
 
     return args
 
-class RepoAction(argparse.Action):
+def repoaction(option, opt_str, value, parser, *args, **kwargs):
     '''Hold a list of repo actions so we can apply them in the order given.'''
-    def __call__(self, parser, namespace, value, opt=None):
-        curval = getattr(namespace, self.dest, [])
-        action = ''
-        if opt.startswith('--enable'):
-            action = 'enable'
-        elif opt.startswith('--disable'):
-            action = 'disable'
-        elif opt.startswith('--repo') or opt.startswith('--addrepo'):
-            action = 'add'
-        curval.append((action, value))
-        setattr(namespace, self.dest, curval)
+    action = ''
+    if opt_str.startswith('--enable'):
+        action = 'enable'
+    elif opt_str.startswith('--disable'):
+        action = 'disable'
+    elif opt_str.startswith('--repo') or opt_str.startswith('--addrepo'):
+        action = 'add'
+    parser.values.repos.append((action, value))
 
 # check the argument to '--device' to see if it refers to install media
-def device_or_mnt(arg):
-    if arg == 'auto':
+def device_or_mnt(option, opt, value):
+    # Handle the default for --device=''
+    if not value:
+        value = 'auto'
+
+    if value == 'auto':
         media = media.find()
     else:
         media = [m for m in media.find() if arg in (m.dev, m.mnt)]
@@ -153,39 +155,47 @@ def device_or_mnt(arg):
 
     if not media:
         msg = _("no install media found - please mount install media first")
-        if arg != 'auto':
-            msg = "%s: %s" % (arg, msg)
+        if value != 'auto':
+            msg = "%s: %s" % (value, msg)
     else:
         devs = ", ".join(m.dev for m in media)
         msg = _("multiple devices found. please choose one of (%s)") % devs
-    raise argparse.ArgumentTypeError(msg)
+    raise optparse.OptionValueError(msg)
 
 # check the argument to '--iso' to make sure it's somewhere we can use it
-def isofile(arg):
-    if not os.path.exists(arg):
-        raise argparse.ArgumentTypeError(_("File not found: %s") % arg)
-    if not os.path.isfile(arg):
-        raise argparse.ArgumentTypeError(_("Not a regular file: %s") % arg)
-    if not media.isiso(arg):
-        raise argparse.ArgumentTypeError(_("Not an ISO 9660 image: %s") % arg)
-    if any(arg.startswith(d.mnt) for d in media.removable()):
-        raise argparse.ArgumentTypeError(_("ISO image on removable media\n"
+def isofile(option, opt, value):
+    if not os.path.exists(value):
+        raise optparse.OptionValueError(_("File not found: %s") % value)
+    if not os.path.isfile(value):
+        raise optparse.OptionValueError(_("Not a regular file: %s") % value)
+    if not media.isiso(value):
+        raise optparse.OptionValueError(_("Not an ISO 9660 image: %s") % value)
+    if any(value.startswith(d.mnt) for d in media.removable()):
+        raise optparse.OptionValueError(_("ISO image on removable media\n"
             "Sorry, but this isn't supported yet.\n"
             "Copy the image to your hard drive or burn it to a disk."))
-    return arg
+    return value
 
-def VERSION(arg):
-    if arg.lower() == 'rawhide':
+def VERSION(option, opt, value):
+    if value.lower() == 'rawhide':
         return 'rawhide'
 
     distro, version, id = platform.linux_distribution()
     version = float(version)
 
-    if float(arg) >= version:
-        return arg
+    if float(value) >= version:
+        return value
     else:
         msg = _("version must be greater than %i") % version
-        raise argparse.ArgumentTypeError(msg)
+        raise optparse.OptionValueError(msg)
+
+class Option(optparse.Option):
+    TYPES = optparse.Option.TYPES + ("device_or_mnt", "isofile", "VERSION")
+    TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
+
+    TYPE_CHECKER["device_or_mnt"] = device_or_mnt
+    TYPE_CHECKER["isofile"] = isofile
+    TYPE_CHECKER["VERSION"] = VERSION
 
 def do_cleanup(args):
     if not args.skipbootloader:

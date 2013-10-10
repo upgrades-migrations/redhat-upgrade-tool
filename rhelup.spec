@@ -15,8 +15,6 @@ Requires:       grubby
 Requires:       systemd >= systemd-44-23.fc17
 %endif
 
-%{?el6:Requires: python-argparse}
-
 BuildRequires:  python2-devel
 BuildRequires:  asciidoc
 BuildArch:      noarch
