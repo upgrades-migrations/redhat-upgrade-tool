@@ -27,13 +27,14 @@ from .conf import Config
 from yum.Errors import YumBaseError
 from yum.parser import varReplace
 from yum.constants import TS_REMOVE_STATES
+from yum.misc import gpgme
 
 enabled_plugins = ['blacklist', 'whiteout']
 disabled_plugins = ['rpm-warm-cache', 'remove-with-leaves', 'presto',
                     'auto-update-debuginfo', 'refresh-packagekit']
 
 from . import _
-from . import cachedir, upgradeconf, kernelpath, initrdpath
+from . import cachedir, upgradeconf, kernelpath, initrdpath, defaultkey
 from . import mirrormanager
 from .util import listdir, mkdir_p
 from shutil import copy2
@@ -132,12 +133,13 @@ class UpgradeDownloader(yum.YumBase):
         # TODO invalidate cache if the version doesn't match previous version
         log.info("checking repos")
 
-        # Add default instrepo if needed
+        # Add default instrepo (and its key) if needed
         if self.instrepoid is None:
             self.instrepoid = 'default-installrepo'
             # FIXME: hardcoded and Fedora-specific
             mirrorurl = mirrorlist('fedora-install-$releasever')
             repos.append(('add', '%s=@%s' % (self.instrepoid, mirrorurl)))
+            repos.append(('gpgkey', '%s=%s' % (self.instrepoid, defaultkey)))
 
         # We need to read .repo files before we can enable/disable them, so:
         self.repos # implicit repo setup! ha ha! what fun!
@@ -164,6 +166,14 @@ class UpgradeDownloader(yum.YumBase):
                     repo.proxy_username = self.conf.proxy_username
                     repo.proxy_password = self.conf.proxy_password
 
+        # add GPG keys *after* the repos are created
+        for action, repo in repos:
+            if action == 'gpgkey':
+                (repoid, keyurl) = repo.split('=',1)
+                repo = self.repos.getRepo(repoid)
+                repo.gpgkey.append(varReplace(keyurl, self.conf.yumvar))
+                repo.gpgcheck = True
+
         # check enabled repos
         for repo in self.repos.listEnabled():
             try:
@@ -174,6 +184,10 @@ class UpgradeDownloader(yum.YumBase):
                 self.disabled_repos.append(repo.id)
             else:
                 log.info("repo %s seems OK" % repo.id)
+
+            # Disable gpg key checking for the repos, if requested
+            if self._override_sigchecks:
+                repo._override_sigchecks = True
 
         log.debug("repos.cache=%i", self.repos.cache)
 
@@ -289,6 +303,50 @@ class UpgradeDownloader(yum.YumBase):
                 log.info("failed to remove %s", f)
         # TODO remove dirs that don't belong to any repo
 
+    def _import_key(self, keyurl, gpgdir=cachedir+'/gpgdir'):
+        log.info("importing keys from %s", keyurl)
+        keys = self._retrievePublicKey(keyurl) # XXX getSig?
+        for info in keys:
+            log.debug("importing key %s", info['hexkeyid'].lower())
+            yum.misc.import_key_to_pubring(info['raw_key'], info['hexkeyid'],
+                                           gpgdir=gpgdir)
+
+    def _get_treeinfo(self):
+        mkdir_p(cachedir)
+        outfile = os.path.join(cachedir, '.treeinfo')
+
+        if self.cacheonly:
+            log.debug("using cached .treeinfo %s", outfile)
+            return outfile
+
+        if self.instrepo.gpgcheck and not self._override_sigchecks:
+            log.debug("fetching .treeinfo.signed from '%s'", self.instrepoid)
+            fn = self.instrepo.grab.urlgrab('.treeinfo.signed',
+                                            outfile+'.signed',
+                                            reget=None)
+
+            # try to import key(s) into our personal keyring
+            log.info("checking GPG keys for instrepo")
+            for k in self.instrepo.gpgkey:
+                if self.check_keyfile(k):
+                    self._import_key(k)
+
+            try:
+                log.info("verifying .treeinfo.signed")
+                # verify file and write plaintext to outfile
+                errs = self.check_signed_file(fn, outfile)
+            except gpgme.GpgmeError:
+                raise yum.Errors.YumGPGCheckError(e.strerror)
+            if errs:
+                raise yum.Errors.YumGPGCheckError(', '.join(errs))
+            return outfile
+
+        else:
+            log.debug("fetching .treeinfo from '%s'", self.instrepoid)
+            fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
+                                            reget=None)
+            return fn
+
     @property
     def instrepo(self):
         return self.repos.getRepo(self.instrepoid)
@@ -296,19 +354,8 @@ class UpgradeDownloader(yum.YumBase):
     @property
     def treeinfo(self):
         if self._treeinfo is None:
-            mkdir_p(cachedir)
-            outfile = os.path.join(cachedir, '.treeinfo')
-            if self.cacheonly:
-                log.debug("using cached .treeinfo %s", outfile)
-                self._treeinfo = Treeinfo(outfile)
-            else:
-                log.debug("fetching .treeinfo from repo '%s'", self.instrepoid)
-                if os.path.exists(outfile):
-                    os.remove(outfile)
-                fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
-                                                reget=None)
-                self._treeinfo = Treeinfo(fn)
-                log.debug(".treeinfo saved at %s", fn)
+            self._treeinfo = Treeinfo(self._get_treeinfo())
+            log.debug("validating .treeinfo")
             self._treeinfo.checkvalues()
         return self._treeinfo
 
@@ -345,6 +392,8 @@ class UpgradeDownloader(yum.YumBase):
             initrd = initrdpath
         except TreeinfoError as e:
             raise YumBaseError(_("invalid data in .treeinfo: %s") % str(e))
+        except yum.Errors.YumGPGCheckError as e:
+            raise YumBaseError(_("could not verify GPG signature: %s") % str(e))
         except yum.URLGrabError as e:
             err = e.strerror
             if e.errno == 256:
@@ -369,18 +418,18 @@ class UpgradeDownloader(yum.YumBase):
         return kernel, initrd
 
     def _checkSignatures(self, pkgs, callback):
-        keycheck = lambda info: self._GPGKeyCheck(info, callback)
+        '''check the package signatures and get keys if needed.
+           works like YumBase._checkSignatures() except it only uses our
+           special automatic _GPGKeyCheck to import untrusted keys.'''
         for po in pkgs:
             result, errmsg = self.sigCheckPkg(po)
             if result == 0:
                 continue
             elif result == 1:
+                keycheck = lambda info: self._GPGKeyCheck(info, callback)
                 self.getKeyForPackage(po, fullaskcb=keycheck)
             else:
                 raise yum.Errors.YumGPGCheckError(errmsg)
-
-    def _getKeyImportMessage(self, info, keyurl, keytype='GPG'):
-        pass
 
     def _GPGKeyCheck(self, info, callback=None):
         '''special key importer: import trusted keys automatically'''
@@ -408,6 +457,8 @@ class UpgradeDownloader(yum.YumBase):
         release key with the old release key - "If you trust this, you can
         trust this too.."
         '''
+        if keyfile.startswith('file://'):
+            keyfile = keyfile[7:]
         # did the key come from a package?
         keypkgs = self.rpmdb.searchFiles(keyfile)
         if keypkgs:
@@ -446,7 +497,7 @@ class UpgradeDownloader(yum.YumBase):
         # everything checks out OK!
         return True
 
-    def check_signed_file(signedfile, outfile, gpgdir=cachedir+'/gpgdir'):
+    def check_signed_file(self, signedfile, outfile, gpgdir=cachedir+'/gpgdir'):
         '''
         uses the keys trusted by RPM to verify signedfile.
         writes the resulting plaintext to outfile.
@@ -457,8 +508,8 @@ class UpgradeDownloader(yum.YumBase):
         keys imported and has its own signature verification code, but AFAICT
         it doesn't (at least not in any way reachable from Python), so..
         '''
-        gpgme = yum.misc.gpgme
-
+        if self._override_sigchecks:
+            return []
         # set up gpgdir
         if not os.path.isdir(gpgdir):
             log.debug("creating gpgdir %s", gpgdir)
