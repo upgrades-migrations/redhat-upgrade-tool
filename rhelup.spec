@@ -16,7 +16,6 @@ Requires:       systemd >= systemd-44-23.fc17
 %endif
 
 BuildRequires:  python2-devel
-BuildRequires:  asciidoc
 BuildArch:      noarch
 
 # GET THEE BEHIND ME, SATAN
