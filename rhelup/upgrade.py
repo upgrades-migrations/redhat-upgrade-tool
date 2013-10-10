@@ -80,7 +80,10 @@ probtypes = { rpm.RPMPROB_NEW_FILE_CONFLICT : _('file conflicts'),
 
 probattrs = ('type', 'pkgNEVR', 'altNEVR', 'key', '_str', '_num')
 def prob2dict(p):
-    return {f:getattr(p,f) for f in probattrs}
+    dict = {}
+    for f in probattrs:
+        dict[f] = getattr(p, f)
+    return dict
 
 class ProblemSummary(object):
     def __init__(self, probtype, problems):

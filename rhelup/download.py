@@ -531,9 +531,10 @@ class UpgradeDownloader(yum.YumBase):
                 log.debug("key %s is already in keyring", hdr.version)
 
         # verify the signed file, writing plaintext to outfile
-        with open(signedfile) as inf, open(outfile, 'w') as outf:
-            ctx = gpgme.Context()
-            sigresults = ctx.verify(inf, None, outf)
+        with open(signedfile) as inf:
+            with open(outfile, 'w') as outf:
+                ctx = gpgme.Context()
+                sigresults = ctx.verify(inf, None, outf)
         # return a list of error messages. if it's empty, we're OK.
         # NOTE: this is enough detail for current use cases, but it's very
         # possible we'll want/need to just return sigresults and let the caller
