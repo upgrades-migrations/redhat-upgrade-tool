@@ -68,5 +68,5 @@ mkdir -p $RPM_BUILD_ROOT/etc/rhelup/update.img.d
 #{_datadir}/rhelup/ui
 
 %changelog
-* Tue Jul 30 2013 David Shea <dshea@redhat.com> 0.7.3-0
-- Repackaged as rhelup
+* Wed Oct 23 2013 David Shea <dshea@redhat.com> - 0.7.3-0
+- Initial rhelup package for RHEL 7.0 (#1012668)
