@@ -59,6 +59,11 @@ def listdir(d):
     for f in os.listdir(d):
         yield os.path.join(d, f)
 
+def rlistdir(d):
+    for root, files, dirs in os.walk(d):
+        for f in files:
+            yield os.path.join(root, f)
+
 def mkdir_p(d):
     try:
         os.makedirs(d)
@@ -75,7 +80,10 @@ def rm_f(f, rm=os.remove):
         log.warn("failed to remove %s: %s", f, str(e))
 
 def rm_rf(d):
-    rm_f(d, rm=rmtree)
+    if os.path.isdir(d):
+        rm_f(d, rm=rmtree)
+    else:
+        rm_f(d)
 
 def kernelver(filename):
     '''read the version number out of a vmlinuz file.'''
