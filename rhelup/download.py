@@ -36,7 +36,7 @@ disabled_plugins = ['rpm-warm-cache', 'remove-with-leaves', 'presto',
 from . import _
 from . import cachedir, upgradeconf, kernelpath, initrdpath, defaultkey
 from . import mirrormanager
-from .util import listdir, mkdir_p
+from .util import listdir, mkdir_p, rm_rf
 from shutil import copy2
 
 log = logging.getLogger(__package__+".yum") # maybe I should rename this..
@@ -62,6 +62,25 @@ def yum_plugin_for_exc():
                 return f
     return None
 
+def init_keyring(gpgdir):
+    # set up gpgdir
+    if not os.path.isdir(gpgdir):
+        log.debug("creating gpgdir %s", gpgdir)
+        os.makedirs(gpgdir, 0o700)
+    else:
+        os.chmod(gpgdir, 0o700)
+    os.environ['GNUPGHOME'] = gpgdir
+
+def import_key(keydata, hexkeyid, gpgdir):
+    log.debug("importing key %s", hexkeyid.lower())
+    yum.misc.import_key_to_pubring(keydata, hexkeyid,
+                                   gpgdir=gpgdir, make_ro_copy=False)
+
+def list_keyring(gpgdir):
+    return [yum.misc.keyIdToRPMVer(int(k, 16))
+            for k in yum.misc.return_keyids_from_pubring(gpgdir)]
+
+
 class UpgradeDownloader(yum.YumBase):
     '''Yum-based downloader class. Based roughly on AnacondaYum.'''
     def __init__(self, version=None, cachedir=cachedir, cacheonly=False):
@@ -86,7 +105,7 @@ class UpgradeDownloader(yum.YumBase):
         self.prerepoconf.failure_callback = raise_exception
         self._repoprogressbar = None
         # TODO: locking to prevent multiple instances
-        # TODO: override logging objects so we get yum logging
+        self.verbose_logger = log
 
     def _getConfig(self):
         firstrun = hasattr(self, 'preconf')
@@ -303,14 +322,6 @@ class UpgradeDownloader(yum.YumBase):
                 log.info("failed to remove %s", f)
         # TODO remove dirs that don't belong to any repo
 
-    def _import_key(self, keyurl, gpgdir=cachedir+'/gpgdir'):
-        log.info("importing keys from %s", keyurl)
-        keys = self._retrievePublicKey(keyurl) # XXX getSig?
-        for info in keys:
-            log.debug("importing key %s", info['hexkeyid'].lower())
-            yum.misc.import_key_to_pubring(info['raw_key'], info['hexkeyid'],
-                                           gpgdir=gpgdir)
-
     def _get_treeinfo(self):
         mkdir_p(cachedir)
         outfile = os.path.join(cachedir, '.treeinfo')
@@ -325,12 +336,6 @@ class UpgradeDownloader(yum.YumBase):
                                             outfile+'.signed',
                                             reget=None)
 
-            # try to import key(s) into our personal keyring
-            log.info("checking GPG keys for instrepo")
-            for k in self.instrepo.gpgkey:
-                if self.check_keyfile(k):
-                    self._import_key(k)
-
             try:
                 log.info("verifying .treeinfo.signed")
                 # verify file and write plaintext to outfile
@@ -339,6 +344,8 @@ class UpgradeDownloader(yum.YumBase):
                 raise yum.Errors.YumGPGCheckError(e.strerror)
             if errs:
                 raise yum.Errors.YumGPGCheckError(', '.join(errs))
+            else:
+                log.info(".treeinfo.signed was signed with a trusted key")
             return outfile
 
         else:
@@ -461,11 +468,12 @@ class UpgradeDownloader(yum.YumBase):
             keyfile = keyfile[7:]
         # did the key come from a package?
         keypkgs = self.rpmdb.searchFiles(keyfile)
+        log.info("checking keyfile %s", keyfile)
         if keypkgs:
             keypkg = sorted(keypkgs)[-1]
-            log.debug("%s is owned by %s", keyfile, keypkg.nevr)
+            log.debug("keyfile owned by package %s", keypkg.nevr)
         if not keypkgs:
-            log.info("%s does not belong to any package", keyfile)
+            log.info("REJECTED: %s does not belong to any package")
             return False
 
         # was that package signed?
@@ -475,27 +483,49 @@ class UpgradeDownloader(yum.YumBase):
             siginfo = yum.pgpmsg.decode(sigdata)[0]
             (keyid,) = struct.unpack('>Q', siginfo.key_id())
             hexkeyid = yum.misc.keyIdToRPMVer(keyid)
-            log.debug("%s is signed with key %s", keypkg.nevr, hexkeyid)
+            log.debug("package was signed with key %s", hexkeyid)
         else:
-            log.info("%s unsigned", keypkg.nevr)
+            log.info("REJECTED: %s was unsigned", keypkg.nevr)
             return False
 
         # do we trust the key that signed it?
-        if yum.misc.keyInstalled(self.ts, keyid, 0):
-            log.debug("key %s is trusted by rpmdb", hexkeyid)
+        if yum.misc.keyInstalled(self.ts, keyid, 0) >= 0:
+            log.debug("key %s is trusted by rpm", hexkeyid)
         else:
-            log.info("key %s is not trusted", hexkeyid)
+            log.info("REJECTED: key %s is not trusted by rpm", hexkeyid)
             return False
 
         # has the key been tampered with?
         problems = keypkg.verify([keyfile]).get(keyfile, [])
         if problems:
-            log.info("%s does not match packaged file (%s)",
+            log.info("REJECTED: keyfile does not match packaged file (%s)",
                      keyfile, " ".join(p.type for p in problems))
             return False
 
         # everything checks out OK!
         return True
+
+    def _setup_keyring(self, gpgdir):
+        # set up a fresh gpgdir
+        rm_rf(gpgdir)
+        init_keyring(gpgdir)
+
+        # import trusted keys from rpmdb
+        log.debug("checking rpmdb trusted keys")
+        pubring_keys = list_keyring(gpgdir)
+        for hdr in self.ts.dbMatch('name', 'gpg-pubkey'):
+            if hdr.version not in pubring_keys:
+                import_key(hdr.description, hdr.version, gpgdir)
+            else:
+                log.debug("key %s is already in keyring", hdr.version)
+
+        # check instrepo keys to see if they're trustworthy
+        log.info("checking GPG keys for instrepo")
+        for k in self.instrepo.gpgkey:
+            if self.check_keyfile(k):
+                keys = self._retrievePublicKey(k) # XXX getSig?
+                for info in keys:
+                    import_key(info['raw_key'], info['hexkeyid'], gpgdir)
 
     def check_signed_file(self, signedfile, outfile, gpgdir=cachedir+'/gpgdir'):
         '''
@@ -510,25 +540,9 @@ class UpgradeDownloader(yum.YumBase):
         '''
         if self._override_sigchecks:
             return []
-        # set up gpgdir
-        if not os.path.isdir(gpgdir):
-            log.debug("creating gpgdir %s", gpgdir)
-            os.makedirs(gpgdir, 0o700)
-        else:
-            os.chmod(gpgdir, 0o700)
-        os.environ['GNUPGHOME'] = gpgdir
 
-        # import trusted keys from rpmdb
-        log.debug("checking rpmdb trusted keys")
-        pubring_keys = [yum.misc.keyIdToRPMVer(int(k, 16))
-                        for k in yum.misc.return_keyids_from_pubring(gpgdir)]
-        for hdr in self.ts.dbMatch('name', 'gpg-pubkey'):
-            if hdr.version not in pubring_keys:
-                log.debug("importing key %s", hdr.version)
-                yum.misc.import_key_to_pubring(hdr.description, hdr.version,
-                                            gpgdir=gpgdir, make_ro_copy=False)
-            else:
-                log.debug("key %s is already in keyring", hdr.version)
+        # set up our own GPG keyring containing all the trusted keys
+        self._setup_keyring(gpgdir)
 
         # verify the signed file, writing plaintext to outfile
         with open(signedfile) as inf:
