@@ -32,9 +32,8 @@ Your pal,
 '''
 
 import logging
-from .logutils import NullHandler
 log = logging.getLogger(__package__)
-log.addHandler(NullHandler())
+log.addHandler(logging.NullHandler())
 
 import gettext
 t = gettext.translation(__package__, "/usr/share/locale", fallback=True)

@@ -20,8 +20,8 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os, sys, time
+from subprocess import call
 
-from rhelup.util import call
 from rhelup.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from rhelup.sysprep import prep_upgrade, prep_boot, setup_media_mount
 from rhelup.upgrade import RPMUpgrade, TransactionError
@@ -179,7 +179,7 @@ def main(args):
     # --- Here's where we summarize potential problems. ---
 
     # list packages without updates, if any
-    missing = sorted(f.find_packages_without_updates(), key=lambda p:p.nevra)
+    missing = sorted(f.find_packages_without_updates(), key=lambda p:p.envra)
     if missing:
         message(_('Packages without updates:'))
         for p in missing:

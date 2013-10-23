@@ -19,10 +19,6 @@
 
 import os, struct
 from shutil import rmtree
-from subprocess import Popen, CalledProcessError, PIPE, STDOUT
-from pipes import quote as shellquote
-import logging
-log = logging.getLogger('rhelup.util')
 
 import logging
 log = logging.getLogger(__package__+".util")
@@ -34,26 +30,6 @@ try:
     is_selinux_enabled.restype = c_bool
 except (ImportError, AttributeError, OSError):
     is_selinux_enabled = lambda: False
-
-def call_output(cmd, *pargs, **kwargs):
-    log.info("exec: `%s`", ' '.join(shellquote(a) for a in cmd))
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, *pargs, **kwargs)
-    (out, err) = p.communicate()
-    retcode = p.poll()
-    return (retcode, out, err)
-
-def call(cmd, *pargs, **kwargs):
-    return call_output(cmd, *pargs, **kwargs)[0]
-
-def check_output(cmd, *pargs, **kwargs):
-    (retcode, out, err) = call_output(cmd, *pargs, **kwargs)
-    if retcode:
-        raise CalledProcessError(retcode, cmd, output=out)
-    return out
-
-def check_call(cmd, *pargs, **kwargs):
-    check_output(cmd, *pargs, **kwargs)
-    return 0
 
 def listdir(d):
     for f in os.listdir(d):

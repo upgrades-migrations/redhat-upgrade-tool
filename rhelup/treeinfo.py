@@ -144,10 +144,7 @@ class Treeinfo(RawConfigParser):
         topdir specifies the default topdir that any 'relpath' arguments are
         assumed to be relative to (see add_image, add_checksum, etc.)
         '''
-        try:
-            RawConfigParser.__init__(self, allow_no_value=True)
-        except TypeError: # python 2.6 :/
-            RawConfigParser.__init__(self)
+        RawConfigParser.__init__(self, allow_no_value=True)
         self._fullpath = dict() # save relpath -> filename mappings here
         if hasattr(fromfile, 'readline'):
             self.readfp(fromfile)

@@ -19,15 +19,6 @@
 
 import logging
 
-class CompatNullHandler(logging.Handler):
-    def emit(self, record):
-        pass
-
-try:
-    from logging import NullHandler
-except ImportError:
-    NullHandler = CompatNullHandler
-
 class Formatter(logging.Formatter):
     levelsyms = {
         logging.DEBUG:   '(DD)',

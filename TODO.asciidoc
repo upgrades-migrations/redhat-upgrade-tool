@@ -64,22 +64,14 @@ Upstreaming::
   * systemd: get system-upgrade.target, system-upgrade-generator upstream
   ** Parallel with http://freedesktop.org/wiki/Software/systemd/SystemUpdates/
 
+Updates::
+  * Scheme for associating updates images with upgrade.img vintages
+
 GUI::
   * Wire up the UI bits
   * Wire up progress callbacks
   ** yum in a subprocess
   *** use `multiprocessing.Queue` to send back progress data?
-
-Legacy systems::
-  * Backport to Python 2.6
-  ** argparse not in standard lib
-  * Backport to upstart
-
-Updates::
-  * Scheme for associating updates images with upgrade.img vintages
-  * Figure out updates.img format
-  * Look for updates.img
-  * Apply it before switch-root
 
 Docs::
   * man pages for services
