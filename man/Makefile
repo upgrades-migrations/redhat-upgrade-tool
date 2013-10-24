@@ -16,6 +16,6 @@ install: $(MANPAGES)
 	-$(INSTALL) $(MAN8PAGES) $(DESTDIR)$(man8dir)
 
 clean:
-	rm -f $(MANPAGES) $(MANPAGES:%=%.xml)
+	rm -f $(MANPAGES:%=%.xml)
 
 .PHONY: all install clean
