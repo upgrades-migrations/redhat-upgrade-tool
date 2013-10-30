@@ -2,6 +2,7 @@ Name:           rhelup
 Version:        0.7.3
 Release:        0%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
+Epoch:          2
 
 License:        GPLv2+
 URL:            https://github.com/dashea/rhelup
@@ -68,5 +69,9 @@ mkdir -p $RPM_BUILD_ROOT/etc/rhelup/update.img.d
 #{_datadir}/rhelup/ui
 
 %changelog
+* Wed Oct 30 2013 David Shea <dshea@redhat.com> - 2:0.7.3-0
+- Set the epoch to 2 to provide a clean upgrade path between RHEL major versions
+  Related: rhbz#1012668
+
 * Wed Oct 23 2013 David Shea <dshea@redhat.com> - 0.7.3-0
 - Initial rhelup package for RHEL 7.0 (#1012668)
