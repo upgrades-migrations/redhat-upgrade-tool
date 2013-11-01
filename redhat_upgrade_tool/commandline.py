@@ -103,6 +103,8 @@ def parse_args(gui=False):
         help=_('add the repo at URL (@URL for mirrorlist)'))
     net.add_option('--instrepo', metavar='REPOID', type=str,
         help=_('get upgrader boot images from REPOID (default: auto)'))
+    net.add_option('--instrepokey', metavar='GPGKEY', type='gpgkeyfile',
+        help=_('use this GPG key to verify upgrader boot images'))
     p.set_defaults(repos=[])
 
     if not gui:
@@ -131,6 +133,9 @@ def parse_args(gui=False):
     # If network is requested, require an instrepo
     if args.network and not args.instrepo:
         p.error(_('--instrepo is required with --network'))
+
+    if args.instrepo and args.instrepokey:
+        args.repos.append(('gpgkey', 'instrepo=%s' % args.instrepokey))
 
     if not gui:
         if args.clean:
@@ -189,6 +194,20 @@ def isofile(option, opt, value):
             "Copy the image to your hard drive or burn it to a disk."))
     return value
 
+# valiadate a GPGKEY argument and return a URI ('file:///...')
+def gpgkeyfile(option, opt, value):
+    if value.startswith('file://'):
+        value = value[7:]
+    gpghead = '-----BEGIN PGP PUBLIC KEY BLOCK-----'
+    try:
+        with open(value) as keyfile:
+            keyhead = keyfile.read(len(gpghead))
+    except (IOError, OSError) as e:
+        raise optparse.OptionValueError(e.strerror)
+    if keyhead != gpghead:
+        raise optparse.OptionValueError(_("File is not a GPG key"))
+    return 'file://' + os.path.abspath(arg)
+
 def VERSION(option, opt, value):
     if value.lower() == 'rawhide':
         return 'rawhide'
@@ -213,12 +232,13 @@ def VERSION(option, opt, value):
         raise optparse.OptionValueError(msg)
 
 class Option(optparse.Option):
-    TYPES = optparse.Option.TYPES + ("device_or_mnt", "isofile", "VERSION")
+    TYPES = optparse.Option.TYPES + ("device_or_mnt", "isofile", "VERSION", "gpgkeyfile")
     TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
 
     TYPE_CHECKER["device_or_mnt"] = device_or_mnt
     TYPE_CHECKER["isofile"] = isofile
     TYPE_CHECKER["VERSION"] = VERSION
+    TYPE_CHECKER["gpgkeyfile"] = gpgkeyfile
 
 def do_cleanup(args):
     # FIXME: This installs RHSM product id certificates in case that
