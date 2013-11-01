@@ -99,6 +99,8 @@ def parse_args(gui=False):
         help=_('add the repo at URL (@URL for mirrorlist)'))
     net.add_argument('--instrepo', metavar='REPOID', type=str,
         help=_('get upgrader boot images from REPOID (default: auto)'))
+    net.add_argument('--instrepokey', metavar='GPGKEY', type=gpgkeyfile,
+        help=_('use this GPG key to verify upgrader boot images'))
     p.set_defaults(repos=[])
 
     if not gui:
@@ -127,6 +129,9 @@ def parse_args(gui=False):
     # If network is requested, require an instrepo
     if args.network and not args.instrepo:
         p.error(_('--instrepo is required with --network'))
+
+    if args.instrepo and args.instrepokey:
+        args.repos.append(('gpgkey', 'instrepo=%s' % args.instrepokey))
 
     if not gui:
         if args.clean:
@@ -185,6 +190,20 @@ def isofile(arg):
             "Sorry, but this isn't supported yet.\n"
             "Copy the image to your hard drive or burn it to a disk."))
     return arg
+
+# validate a GPGKEY argument and return a URI ('file:///...')
+def gpgkeyfile(arg):
+    if arg.startswith('file://'):
+        arg = arg[7:]
+    gpghead = '-----BEGIN PGP PUBLIC KEY BLOCK-----'
+    try:
+        with open(arg) as keyfile:
+            keyhead = keyfile.read(len(gpghead))
+    except (IOError, OSError) as e:
+        raise argparse.ArgumentTypeError(e.strerror)
+    if keyhead != gpghead:
+        raise argparse.ArgumentTypeError(_("File is not a GPG key"))
+    return 'file://' + os.path.abspath(arg)
 
 def VERSION(arg):
     if arg.lower() == 'rawhide':
