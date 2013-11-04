@@ -2,6 +2,7 @@ Name:           rhelup
 Version:        0.7.3
 Release:        0%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
+Epoch:          1
 
 License:        GPLv2+
 URL:            https://github.com/dashea/rhelup
