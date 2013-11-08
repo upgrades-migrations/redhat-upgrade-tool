@@ -25,14 +25,14 @@ import argparse
 from rpmUtils.arch import getBaseArch
 
 # haha gross.
-if os.path.exists("../rhelup.spec"):
+if os.path.exists("../redhat-upgrade-tool.spec"):
     sys.path.append("../")
 
-from rhelup.treeinfo import Treeinfo
+from redhat_upgrade_tool.treeinfo import Treeinfo
 
 import logging
-log = logging.getLogger("rhelup.maketreeinfo")
-from rhelup.logutils import consolelog
+log = logging.getLogger("redhat_upgrade_tool.maketreeinfo")
+from redhat_upgrade_tool.logutils import consolelog
 
 def parse_args():
     p = argparse.ArgumentParser(

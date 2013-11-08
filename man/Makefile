@@ -3,13 +3,13 @@ MANDIR=/usr/share/man
 mandir=$(MANDIR)
 man8dir=$(mandir)/man8
 
-MAN8PAGES=rhelup.8
+MAN8PAGES=redhat-upgrade-tool.8
 MANPAGES=$(MAN8PAGES)
 
 all: $(MANPAGES)
 
-$(MANPAGES): %: %.asciidoc
-	a2x --format=manpage $<
+#$(MANPAGES): %: %.asciidoc
+#	a2x --format=manpage $<
 
 install: $(MANPAGES)
 	$(INSTALL) -d $(DESTDIR)$(man8dir)

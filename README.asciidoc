@@ -1,15 +1,15 @@
-rhelup - the RHEL Upgrader
+redhat-upgrade-tool - the Red Hat Upgrader
 ===========================
 Will Woods <wwoods@redhat.com>
-:rhelup_dracut: https://github.com/dashea/rhelup-dracut/
+:redhat_upgrade_dracut: https://github.com/dashea/redhat-upgrade-dracut/
 
-This is 'rhelup', the RHEL Upgrade tool. This repo/package has the following
-contents:
+This is 'redhat-upgrade-tool', the Red Hat Upgrade tool. This repo/package has
+the following contents:
 
 Frontend / pre-upgrade::
     This is the GUI/CLI frontend. It's responsible for setting up the system
     to be upgraded: downloading packages, modifying the bootloader, etc.
-    * Files: `rhelup/`, `rhelup.py`, `rhelup-gtk.py` (and `ui/`)
+    * Files: `redhat_upgrade_tool/`, `redhat_upgrade_tool.py`
 
 Upgrade services::
     Part of a distro-neutral framework for performing major system upgrades
@@ -18,8 +18,8 @@ Upgrade services::
     setting up your disks.
     * Files: `systemd/`
 
-The actual upgrade is handled inside the initramfs by 'rhelup-dracut', which
-can be found here: {rhelup_dracut}
+The actual upgrade is handled inside the initramfs by 'redhat-upgrade-dracut', which
+can be found here: {redhat_upgrade_dracut}
 
 Building it yourself
 --------------------
@@ -32,23 +32,23 @@ Building upgrade images
 ~~~~~~~~~~~~~~~~~~~~~~~
 You'll need a system running the _new_ release for this.
 
-See {rhelup_dracut}[the rhelup-dracut README] for details, but roughly:
+See {redhat_upgrade_dracut}[the redhat-upgrade-dracut README] for details, but roughly:
 
-. Install 'rhelup-dracut' and its dependencies
+. Install 'redhat-upgrade-dracut' and its dependencies
     * deps: 'dracut', 'rpm-devel', 'plymouth-devel', 'glib2-devel'
 . `make install`
-. `./makerheluprepo REPODIR`
+. `./make-redhat-upgrade-repo REPODIR`
     * this requires 'createrepo'
 . Copy REPODIR somewhere HTTP-accessible
 
-Upgrading old system using `rhelup`
+Upgrading old system using `redhat-upgrade-tool`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 . Install build requirements
     * 'python-devel', 'systemd-devel'
 . Install frontend(s) and systemd support files
     * `make install`
-. Run rhelup to prepare system
-    * `rhelup --network 7.0 --instrepo http://your-repo.host/REPODIR`
+. Run redhat-upgrade-tool to prepare system
+    * `redhat-upgrade-tool --network 7.0 --instrepo http://your-repo.host/REPODIR`
     ** This will take a while. _Be patient._
     ** You can cancel it and it'll resume downloading where it left off.
 . Reboot
@@ -60,20 +60,20 @@ Upgrading old system using `rhelup`
 How network upgrades work
 -------------------------
 
-There's two simple rules that control where `fedup` looks for packages when
+There's two simple rules that control where `redhat-upgrade-tool` looks for packages when
 doing network upgrades.
 
-Given `fedup --network $VERSION`, fedup will:
+Given `redhat-upgrade-tool --network $VERSION`, redhat-upgrade-tool will:
 
 1. Use the existing repo configuration, with `$releasever` set to `$VERSION`
 2. Add an extra 'instrepo' for fetching boot images; this repo defaults to
    https://mirrors.fedoraproject.org/metalink/repo=fedora-install-$releasever&arch=$basearch
 
-`$VERSION` could be any string; currently `fedup` accepts "rawhide" or numbers
+`$VERSION` could be any string; currently `redhat-upgrade-tool` accepts numbers
 greater than the current system version. No explicit validation of `$VERSION`
 is done beyond that.
 
-If the user gives an invalid version (e.g. `fedup --network 31337`), fedup
+If the user gives an invalid version (e.g. `redhat-upgrade-tool --network 31337`), redhat-upgrade-tool
 will still set up repos and attempt to contact them, but they won't be found,
 which will cause the upgrade to fail. So invalid versions are _implicitly_
 rejected.

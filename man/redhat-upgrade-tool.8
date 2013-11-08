@@ -1,0 +1,177 @@
+'\" t
+.\"     Title: redhat-upgrade-tool
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 11/08/2013
+.\"    Manual: redhat-upgrade-tool User Manual
+.\"    Source: redhat-upgrade-tool
+.\"  Language: English
+.\"
+.TH "REDHAT\-UPGRADE\-TOOL" "8" "11/08/2013" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+redhat\-upgrade\-tool \- Red Hat Upgrade tool
+.SH "SYNOPSIS"
+.sp
+redhat\-upgrade\-tool [\fIOPTIONS\fR] \fBSOURCE\fR
+.SH "DESCRIPTION"
+.sp
+\fBredhat\-upgrade\-tool\fR is the Red Hat Upgrade tool\&.
+.sp
+The \fBredhat\-upgrade\-tool\fR client runs on the system to be upgraded\&. It determines what packages are needed for upgrade and gathers them from the source(s) given\&. It also fetches and sets up the boot images needed to run the upgrade and sets up the system to perform the upgrade at next boot\&.
+.sp
+The actual upgrade takes place when the system is rebooted, using the boot images set up by \fBredhat\-upgrade\-tool\fR\&. The upgrade initrd starts the existing system (mostly) as normal, lets it mount all the local filesystems, then starts the upgrade\&.
+.sp
+When the upgrade finishes, it reboots the system into the newly\-upgraded OS\&.
+.SH "OPTIONS"
+.SS "Optional arguments"
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Show a help message and exit\&.
+.RE
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+Print more info\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-debug\fR
+.RS 4
+Print lots of debugging info\&.
+.RE
+.PP
+\fB\-\-debuglog\fR \fIDEBUGLOG\fR
+.RS 4
+Write debugging output to the given file\&. Defaults to
+\fI/var/log/redhat\-upgrade\-tool\&.log\fR\&.
+.RE
+.PP
+\fB\-\-reboot\fR
+.RS 4
+Automatically reboot to start the upgrade when ready\&.
+.RE
+.SS "SOURCE"
+.sp
+These options tell \fBredhat\-upgrade\-tool\fR where to look for the packages and boot images needed to run the upgrade\&. At least one of these options is required\&.
+.PP
+\fB\-\-device\fR [\fIDEV\fR]
+.RS 4
+Device or mountpoint of mounted install media\&. If
+\fIDEV\fR
+is omitted,
+\fBredhat\-upgrade\-tool\fR
+will scan all currently\-mounted removable devices (USB disks, optical media, etc\&.)
+.RE
+.PP
+\fB\-\-iso\fR \fIISO\fR
+.RS 4
+Installation image file\&.
+.RE
+.PP
+\fB\-\-network\fR \fIVERSION\fR
+.RS 4
+Online repos matching
+\fIVERSION\fR
+(a number or "rawhide")
+.RE
+.sp
+Multiple sources may be used, if desired\&.
+.SS "Additional options for \-\-network"
+.PP
+\fB\-\-enablerepo\fR \fIREPOID\fR
+.RS 4
+Enable one or more repos (wildcards allowed)\&.
+.RE
+.PP
+\fB\-\-disablerepo\fR \fIREPOID\fR
+.RS 4
+Disable one or more repos (wildcards allowed)\&.
+.RE
+.PP
+\fB\-\-addrepo\fR \fIREPOID=[@]URL\fR
+.RS 4
+Add the repo at
+\fIURL\fR\&. Prefix URL with
+\fI@\fR
+to indicate that the URL is a mirrorlist\&.
+.RE
+.PP
+\fB\-\-instrepo\fR \fIREPOID\fR
+.RS 4
+Get upgrader boot images from the repo named
+\fIREPOID\fR\&. The repo must contain a valid
+\fI\&.treeinfo\fR
+file which points to the location of usable
+\fIkernel\fR
+and
+\fIupgrade\fR
+images\&.
+.RE
+.SS "Cleanup commands"
+.PP
+\fB\-\-resetbootloader\fR
+.RS 4
+Remove any modifications made to bootloader configuration\&.
+.RE
+.PP
+\fB\-\-clean\fR
+.RS 4
+Clean up everything written by
+\fBredhat\-upgrade\-tool\fR\&.
+.RE
+.SH "EXAMPLES"
+.sp
+\fBredhat\-upgrade\-tool \-\-network 7\&.0 \-\-instrepo <repo URL>\fR
+.sp
+Upgrade to RHEL 7\&.0 by downloading all needed packages and data from the specified repository\&.
+.sp
+\fBredhat\-upgrade\-tool \-\-device \-\-network 7\&.0\fR
+.sp
+Upgrade to RHEL 7\&.0 using install media mounted somewhere on the system, fetching updates from the network if needed\&.
+.SH "EXIT STATUS"
+.PP
+0
+.RS 4
+Success\&.
+.RE
+.PP
+1
+.RS 4
+Cancelled by user, failure writing files to disk, or other unknown error
+.RE
+.PP
+2
+.RS 4
+Failed to download/copy files from the given
+\fISOURCE\fR
+.RE
+.PP
+3
+.RS 4
+RPM upgrade transaction test failed
+.RE
+.SH "BUGS"
+.sp
+The \fB\-\-iso\fR image must be on a filesystem listed in \fI/etc/fstab\fR\&.
+.SH "AUTHORS"
+.sp
+Will Woods <wwoods@redhat\&.com>

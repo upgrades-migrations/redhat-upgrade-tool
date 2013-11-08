@@ -27,7 +27,7 @@ die() { echo "$@"; exit 1; }
 grep -qw 'upgrade.test' /proc/cmdline && UPGRADETEST=1 || UPGRADETEST=''
 
 # remove our boot entry
-[ $UPGRADETEST ] || new-kernel-pkg --remove rhelup
+[ $UPGRADETEST ] || new-kernel-pkg --remove redhat-upgrade-tool
 
 # make target dir for systemd's pivot_root
 mkdir -p $UPGRADEROOT/mnt

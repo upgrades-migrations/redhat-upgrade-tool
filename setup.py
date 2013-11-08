@@ -63,17 +63,17 @@ class BuildScripts(build_scripts):
                 log.info("renaming %s -> %s", outfile, basename(newfile))
                 os.rename(outfile, newfile)
 
-setup(name="rhelup",
+setup(name="redhat-upgrade-tool",
       version="0.7.3",
-      description="RHEL Upgrade",
+      description="Red Hat Upgrade",
       long_description="",
       author="Will Woods",
       author_email="wwoods@redhat.com",
-      url="https://github.com/dashea/rhelup",
-      download_url="https://github.com/wgwoods/rhelup/downloads",
+      url="https://github.com/dashea/redhat-upgrade-tool",
+      download_url="https://github.com/dashea/redhat-upgrade-tool/downloads",
       license="GPLv2+",
-      packages=["rhelup"],
-      scripts=["rhelup.py"],
+      packages=["redhat_upgrade_tool"],
+      scripts=["redhat-upgrade-tool.py"],
       cmdclass={
         'gettext': Gettext,
         'msgfmt': Msgfmt,

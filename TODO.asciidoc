@@ -8,8 +8,8 @@ Safety checks::
   * If /etc/yum/vars/releasever exists, complain to user (#908017)
 
 Migration::
-  * Add a _rhelup-before-upgrade_ scriptlet hook
-  ** Not technically a dracut hook, since it'll be run by rhelup
+  * Add a _redhat-before-upgrade_ scriptlet hook
+  ** Not technically a dracut hook, since it'll be run by redhat-upgrade-tool
   ** Example uses:
   *** https://bugzilla.redhat.com/show_bug.cgi?id=881624[Bug #881624]:
       Migrate `KEYTABLE=...` to `KEYMAP=...`
@@ -39,11 +39,11 @@ Logging::
 
 Commandline behavior::
   * Write sys.argv into config file
-  ** use `rhelup --continue` to repeat last run
-  ** use `rhelup --abort` to delete stored args and remove bootloader config
+  ** use `redhat-upgrade-tool --continue` to repeat last run
+  ** use `redhat-upgrade-tool --abort` to delete stored args and remove bootloader config
   * Don't mess with bootloader unless specifically requested
-  * At end of upgrade: ``Run 'rhelup --reboot' to begin upgrade''
-  ** and/or `rhelup --start`
+  * At end of upgrade: ``Run 'redhat-upgrade-tool --reboot' to begin upgrade''
+  ** and/or `redhat-upgrade-tool --start`
 
 distro-sync mode::
   * Add `--distro-sync` flag (or similar)

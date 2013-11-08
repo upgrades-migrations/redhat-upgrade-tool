@@ -29,7 +29,7 @@ A typical .treeinfo file looks like this:
     timestamp = 1337720130.41
     variant = Server
     version = 7.0
-    packagedir = 
+    packagedir =
     arch = x86_64
 
     [stage2]

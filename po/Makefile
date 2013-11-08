@@ -1,2 +1,2 @@
-rhelup.pot:
-	intltool-update --pot --gettext-package=rhelup
+redhat-upgrade-tool.pot:
+	intltool-update --pot --gettext-package=redhat-upgrade-tool
