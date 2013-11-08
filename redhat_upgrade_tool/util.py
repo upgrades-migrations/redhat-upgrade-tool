@@ -21,8 +21,6 @@ import os, struct
 from shutil import rmtree
 from subprocess import Popen, CalledProcessError, PIPE, STDOUT
 from pipes import quote as shellquote
-import logging
-log = logging.getLogger('rhelup.util')
 
 import logging
 log = logging.getLogger(__package__+".util")

@@ -1,13 +1,13 @@
 '\" t
-.\"     Title: rhelup
+.\"     Title: redhat-upgrade-tool
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 10/10/2013
-.\"    Manual: rhelup User Manual
-.\"    Source: rhelup
+.\"      Date: 11/08/2013
+.\"    Manual: redhat-upgrade-tool User Manual
+.\"    Source: redhat-upgrade-tool
 .\"  Language: English
 .\"
-.TH "RHELUP" "8" "10/10/2013" "rhelup" "rhelup User Manual"
+.TH "REDHAT\-UPGRADE\-TOOL" "8" "11/08/2013" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,17 +28,17 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-rhelup \- RHEL Upgrade tool
+redhat\-upgrade\-tool \- Red Hat Upgrade tool
 .SH "SYNOPSIS"
 .sp
-rhelup [\fIOPTIONS\fR] \fBSOURCE\fR
+redhat\-upgrade\-tool [\fIOPTIONS\fR] \fBSOURCE\fR
 .SH "DESCRIPTION"
 .sp
-\fBrhelup\fR is the \fBRHEL\fR \fBUp\fRgrade tool\&.
+\fBredhat\-upgrade\-tool\fR is the Red Hat Upgrade tool\&.
 .sp
-The \fBrhelup\fR client runs on the system to be upgraded\&. It determines what packages are needed for upgrade and gathers them from the source(s) given\&. It also fetches and sets up the boot images needed to run the upgrade and sets up the system to perform the upgrade at next boot\&.
+The \fBredhat\-upgrade\-tool\fR client runs on the system to be upgraded\&. It determines what packages are needed for upgrade and gathers them from the source(s) given\&. It also fetches and sets up the boot images needed to run the upgrade and sets up the system to perform the upgrade at next boot\&.
 .sp
-The actual upgrade takes place when the system is rebooted, using the boot images set up by \fBrhelup\fR\&. The upgrade initrd starts the existing system (mostly) as normal, lets it mount all the local filesystems, then starts the upgrade\&.
+The actual upgrade takes place when the system is rebooted, using the boot images set up by \fBredhat\-upgrade\-tool\fR\&. The upgrade initrd starts the existing system (mostly) as normal, lets it mount all the local filesystems, then starts the upgrade\&.
 .sp
 When the upgrade finishes, it reboots the system into the newly\-upgraded OS\&.
 .SH "OPTIONS"
@@ -62,7 +62,7 @@ Print lots of debugging info\&.
 \fB\-\-debuglog\fR \fIDEBUGLOG\fR
 .RS 4
 Write debugging output to the given file\&. Defaults to
-\fI/var/log/rhelup\&.log\fR\&.
+\fI/var/log/redhat\-upgrade\-tool\&.log\fR\&.
 .RE
 .PP
 \fB\-\-reboot\fR
@@ -71,14 +71,14 @@ Automatically reboot to start the upgrade when ready\&.
 .RE
 .SS "SOURCE"
 .sp
-These options tell \fBrhelup\fR where to look for the packages and boot images needed to run the upgrade\&. At least one of these options is required\&.
+These options tell \fBredhat\-upgrade\-tool\fR where to look for the packages and boot images needed to run the upgrade\&. At least one of these options is required\&.
 .PP
 \fB\-\-device\fR [\fIDEV\fR]
 .RS 4
 Device or mountpoint of mounted install media\&. If
 \fIDEV\fR
 is omitted,
-\fBrhelup\fR
+\fBredhat\-upgrade\-tool\fR
 will scan all currently\-mounted removable devices (USB disks, optical media, etc\&.)
 .RE
 .PP
@@ -136,15 +136,15 @@ Remove any modifications made to bootloader configuration\&.
 \fB\-\-clean\fR
 .RS 4
 Clean up everything written by
-\fBrhelup\fR\&.
+\fBredhat\-upgrade\-tool\fR\&.
 .RE
 .SH "EXAMPLES"
 .sp
-\fBrhelup \-\-network 7\&.0 \-\-instrepo <repo URL>\fR
+\fBredhat\-upgrade\-tool \-\-network 7\&.0 \-\-instrepo <repo URL>\fR
 .sp
 Upgrade to RHEL 7\&.0 by downloading all needed packages and data from the specified repository\&.
 .sp
-\fBrhelup \-\-device \-\-network 7\&.0\fR
+\fBredhat\-upgrade\-tool \-\-device \-\-network 7\&.0\fR
 .sp
 Upgrade to RHEL 7\&.0 using install media mounted somewhere on the system, fetching updates from the network if needed\&.
 .SH "EXIT STATUS"

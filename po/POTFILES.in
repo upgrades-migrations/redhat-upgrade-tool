@@ -1,7 +1,7 @@
-rhelup.py
-rhelup/textoutput.py
-rhelup/download.py
-rhelup/sysprep.py
-rhelup/upgrade.py
-rhelup/commandline.py
-rhelup/upgrade.py
+redhat-upgrade-tool.py
+redhat_upgrade_tool/textoutput.py
+redhat_upgrade_tool/download.py
+redhat_upgrade_tool/sysprep.py
+redhat_upgrade_tool/upgrade.py
+redhat_upgrade_tool/commandline.py
+redhat_upgrade_tool/upgrade.py

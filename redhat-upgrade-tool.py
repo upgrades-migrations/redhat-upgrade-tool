@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #
-# rhelup.py - commandline frontend for rhelup, the RHEL Upgrader.
+# redhat-upgrade-tool.py - commandline frontend for redhat-upgrade-tool, the
+# Red Hat Upgrade Tool.
 #
 # Copyright (C) 2012 Red Hat Inc.
 #
@@ -21,24 +22,24 @@
 
 import os, sys, time
 
-from rhelup.util import call
-from rhelup.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
-from rhelup.sysprep import prep_upgrade, prep_boot, setup_media_mount
-from rhelup.upgrade import RPMUpgrade, TransactionError
+from redhat_upgrade_tool.util import call
+from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
+from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount
+from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
-from rhelup.commandline import parse_args, do_cleanup, device_setup
-from rhelup import textoutput as output
+from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
+from redhat_upgrade_tool import textoutput as output
 
-import rhelup.logutils as logutils
-import rhelup.media as media
+import redhat_upgrade_tool.logutils as logutils
+import redhat_upgrade_tool.media as media
 
 import logging
-log = logging.getLogger("rhelup")
+log = logging.getLogger("redhat-upgrade-tool")
 def message(m):
     print m
     log.info(m)
 
-from rhelup import _, kernelpath, initrdpath
+from redhat_upgrade_tool import _, kernelpath, initrdpath
 
 def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
                      enable_plugins=[], disable_plugins=[]):

@@ -26,10 +26,10 @@ clean: $(CLEAN_TARGETS)
 	rm -rf build
 	rm -f $(ARCHIVE)
 
-ARCHIVE = rhelup-$(VERSION).tar.xz
+ARCHIVE = redhat-upgrade-tool-$(VERSION).tar.xz
 archive: $(ARCHIVE)
-rhelup-$(VERSION).tar.xz:
-	git archive --format=tar --prefix=rhelup-$(VERSION)/ HEAD \
+redhat-upgrade-tool-$(VERSION).tar.xz:
+	git archive --format=tar --prefix=redhat-upgrade-tool-$(VERSION)/ HEAD \
 	  | xz -c > $@ || rm $@
 
 .PHONY: all archive install clean
