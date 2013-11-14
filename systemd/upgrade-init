@@ -2,7 +2,7 @@
 # Mini 'init' to run system upgrade for SysV-style systems.
 
 export PATH="/sbin:/usr/sbin:/bin:/usr/bin:$PATH"
-. /run/initramfs/upgrade.conf
+UPGRADEROOT=/system-upgrade-root
 
 # method borrowed from dracut/modules.d/99base/init.sh
 udev_shutdown() {
