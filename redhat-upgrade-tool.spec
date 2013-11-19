@@ -74,5 +74,6 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
-* Tue Jul 30 2013 David Shea <dshea@redhat.com> 0.7.3-0
-- Repackaged as redhat-upgrade-tool
+* Tue Nov 19 2013 David Shea <dshea@redhat.com> 0.7.3-0
+- Initial package for RHEL 6
+  Resolves: rhbz#1012617
