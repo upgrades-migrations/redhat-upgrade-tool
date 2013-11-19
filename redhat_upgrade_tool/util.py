@@ -46,7 +46,7 @@ def call(cmd, *pargs, **kwargs):
 def check_output(cmd, *pargs, **kwargs):
     (retcode, out, err) = call_output(cmd, *pargs, **kwargs)
     if retcode:
-        raise CalledProcessError(retcode, cmd, output=out)
+        raise CalledProcessError(retcode, cmd)
     return out
 
 def check_call(cmd, *pargs, **kwargs):
