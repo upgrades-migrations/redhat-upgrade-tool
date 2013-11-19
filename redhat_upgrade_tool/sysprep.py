@@ -135,6 +135,7 @@ def modify_bootloader(kernel, initrd):
     log.info("adding new boot entry")
 
     args = ["upgrade"]
+    remove_args = ["rhgb", "quiet"]
     if init_is_systemd():
         args.append("systemd.unit=system-upgrade.target")
     else:
@@ -148,7 +149,8 @@ def modify_bootloader(kernel, initrd):
         # See https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=896010
         args.append("enforcing=0")
 
-    boot.add_entry(kernel, initrd, banner=_("System Upgrade"), kargs=args)
+    boot.add_entry(kernel, initrd, banner=_("System Upgrade"), kargs=args,
+            remove_kargs=remove_args)
 
 def prep_boot(kernel, initrd):
     # check for systems that need mdadm.conf

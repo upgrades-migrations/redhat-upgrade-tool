@@ -28,7 +28,7 @@ def kernelver(kernel):
     else:
         raise ValueError("kernel name must start with '%s'" % kernelprefix)
 
-def add_entry(kernel, initrd, banner=None, kargs=[], makedefault=True):
+def add_entry(kernel, initrd, banner=None, kargs=[], makedefault=True, remove_kargs=[]):
     cmd = ["new-kernel-pkg", "--initrdfile", initrd]
     if banner:
         cmd += ["--banner", banner]
@@ -37,7 +37,15 @@ def add_entry(kernel, initrd, banner=None, kargs=[], makedefault=True):
     if makedefault:
         cmd += ["--make-default"]
     cmd += ["--install", kernelver(kernel)]
-    return check_output(cmd)
+    output = check_output(cmd)
+
+    if remove_kargs:
+        # Update the entry to remove arguments pulled in from the default entry
+        cmd = ["new-kernel-pkg", "--remove-args", " ".join(remove_kargs),
+                "--update", kernelver(kernel)]
+        output += check_output(cmd)
+
+    return output
 
 def remove_entry(kernel):
     cmd = ["new-kernel-pkg", "--remove", kernelver(kernel)]
