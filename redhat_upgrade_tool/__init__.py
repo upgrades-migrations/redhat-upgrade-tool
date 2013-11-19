@@ -39,7 +39,7 @@ import gettext
 t = gettext.translation(__package__, "/usr/share/locale", fallback=True)
 _ = t.lgettext
 
-kernel_id = __package__
+kernel_id = "redhat-upgrade-tool"
 # NOTE: new-kernel-pkg requires this kernel name/path
 kernelpath = '/boot/vmlinuz-%s' % kernel_id
 initrdpath = '/boot/initramfs-%s.img' % kernel_id
