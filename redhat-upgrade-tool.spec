@@ -13,7 +13,7 @@ Source0:        %{name}-%{version}.tar.xz
 Requires:       systemd >= 44-23
 Requires:       grubby
 
-BuildRequires:  python2-devel
+BuildRequires:  python-libs
 BuildRequires:  systemd-devel
 BuildRequires:  asciidoc
 BuildArch:      noarch
