@@ -146,19 +146,19 @@ def device_or_mnt(option, opt, value):
         value = 'auto'
 
     if value == 'auto':
-        media = media.find()
+        localmedia = media.find()
     else:
-        media = [m for m in media.find() if value in (m.dev, m.mnt)]
+        localmedia = [m for m in media.find() if value in (m.dev, m.mnt)]
 
-    if len(media) == 1:
-        return media.pop()
+    if len(localmedia) == 1:
+        return localmedia.pop()
 
-    if not media:
+    if not localmedia:
         msg = _("no install media found - please mount install media first")
         if value != 'auto':
             msg = "%s: %s" % (value, msg)
     else:
-        devs = ", ".join(m.dev for m in media)
+        devs = ", ".join(m.dev for m in localmedia)
         msg = _("multiple devices found. please choose one of (%s)") % devs
     raise optparse.OptionValueError(msg)
 
