@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.3
+Version:        0.7.4
 Release:        0%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -74,6 +74,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Tue Nov 26 2013 David Shea <dshea@redhat.com> 0.7.4-0
+- Fix the kernel and initrd names. (#1031951)
+- Remove rhgb quiet from the kernel command line. (#1032038)
+- Remove the output parameter from CalledProcessError (#1032038)
+- Change the python-devel BuildRequires to python-libs
+
 * Tue Nov 19 2013 David Shea <dshea@redhat.com> 0.7.3-0
 - Initial package for RHEL 6
   Resolves: rhbz#1012617
