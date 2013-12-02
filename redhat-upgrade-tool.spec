@@ -1,12 +1,12 @@
 Name:           redhat-upgrade-tool
 Version:        0.7.4
-Release:        0%{?dist}
+Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
 
 License:        GPLv2+
 URL:            https://github.com/dashea/redhat-upgrade-tool
-Source0:        https://github.com/downloads/dashea/redhat-upgrade-tool/%{name}-%{version}.tar.xz
+Source0:        %{name}-%{version}.tar.xz
 
 Requires:       grubby
 
@@ -74,6 +74,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Dec  2 2013 David Shea <dshea@redhat.com> 0.7.4-1
+- Remove the URL from Source0
+  Related: rhbz#1034906
+
 * Tue Nov 26 2013 David Shea <dshea@redhat.com> 0.7.4-0
 - Fix the kernel and initrd names. (#1031951)
 - Remove rhgb quiet from the kernel command line. (#1032038)
