@@ -10,7 +10,7 @@ Source0:        https://github.com/downloads/dashea/redhat-upgrade-tool/%{name}-
 
 # Require updates to various packages where necessary to fix bugs.
 # Bug #910326
-Requires:       systemd >= systemd-44-23.fc17
+Requires:       systemd >= 44-23
 Requires:       grubby
 
 BuildRequires:  python2-devel
