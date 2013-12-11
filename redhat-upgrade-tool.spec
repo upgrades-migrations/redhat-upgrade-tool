@@ -1,6 +1,6 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.3
-Release:        2%{?dist}
+Version:        0.7.4
+Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          2
 
@@ -69,6 +69,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Dec 11 2013 David Shea <dshea@redhat.com> - 2:0.7.4-1
+- Fix the systemd Requires: line.
+  Resolves: rhbz#1035461
+- Drop /run/initramfs/upgrade.conf
+  Related: rhbz#1030561
+
 * Fri Nov  8 2013 David Shea <dshea@redhat.com> - 2:0.7.3-2
 - Rename to redhat-upgrade-tool
   Resolves: rhbz#1027491
