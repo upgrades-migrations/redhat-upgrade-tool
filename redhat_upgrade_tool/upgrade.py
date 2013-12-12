@@ -125,15 +125,12 @@ class DepProblemSummary(ProblemSummary):
     def get_details(self):
         self._log_probs()
         pkgprobs = dict()
-        # pkgprobs['installedpkg'] = {'otherpkg1': [req1, req2, ...], ...}
+        # pkgprobs['installedpkg'] = [req1, req2, ...]
         for p in self.problems:
-            # NOTE: p._num is a header reference if p.pkgNEVR is installed
-            thispkg, otherpkg, req = p.altNEVR, p.pkgNEVR, p._str
+            thispkg, req = p.pkgNEVR, p.altNEVR.split()[1]
             if thispkg not in pkgprobs:
-                pkgprobs[thispkg] = {}
-            if otherpkg not in pkgprobs[thispkg]:
-                pkgprobs[thispkg][otherpkg] = set()
-            pkgprobs[thispkg][otherpkg].add(req)
+                pkgprobs[thispkg] = set()
+            pkgprobs[thispkg].add(req)
         return pkgprobs
 
     def format_details(self):
