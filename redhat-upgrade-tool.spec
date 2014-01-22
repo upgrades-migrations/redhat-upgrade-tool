@@ -6,7 +6,7 @@ Epoch:          2
 
 License:        GPLv2+
 URL:            https://github.com/dashea/redhat-upgrade-tool
-Source0:        https://github.com/downloads/dashea/redhat-upgrade-tool/%{name}-%{version}.tar.xz
+Source0:        %{name}-%{version}.tar.xz
 
 # Require updates to various packages where necessary to fix bugs.
 # Bug #910326
