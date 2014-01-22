@@ -17,7 +17,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, stat
+import os, stat, re
 from collections import namedtuple
 from os.path import exists, join
 from .util import check_output, call, STDOUT, CalledProcessError
@@ -84,8 +84,12 @@ def loopmount(filename, mntpoint=None):
 def fix_loop_entry(mnt):
     '''return new FstabEntry with dev=backing_file and "loop" added to opts'''
     loopdev = os.path.basename(mnt.dev)
-    sysfile = "/sys/class/block/%s/loop/backing_file" % loopdev
-    backing_file = open(sysfile).read().strip()
+    backing_file_line = check_output(['losetup', mnt.dev])
+    # The format of the output is "device: [%04x]:%u (backing_device)
+    # Use everything from the lo_device hex digits to the end of the string
+    # to extract the filename
+    m = re.search(r': \[[0-9A-Fa-f]{4,}\]:[0-9]+ \((.*)\)$', backing_file_line)
+    backing_file = m.group(1)
     opts = ','.join([mnt.opts, "loop"])
     return mnt._replace(dev=backing_file, opts=opts)
 
