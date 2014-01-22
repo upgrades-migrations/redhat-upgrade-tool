@@ -148,7 +148,7 @@ def device_or_mnt(option, opt, value):
     if value == 'auto':
         media = media.find()
     else:
-        media = [m for m in media.find() if arg in (m.dev, m.mnt)]
+        media = [m for m in media.find() if value in (m.dev, m.mnt)]
 
     if len(media) == 1:
         return media.pop()
