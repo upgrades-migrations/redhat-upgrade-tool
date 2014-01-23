@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.5
+Version:        0.7.6
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          2
@@ -69,6 +69,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Thu Jan 23 2013 David Shea <dshea@redhat.com> - 2:0.7.6-1
+- Remove the URL from the Source0 line (dshea)
+  Resolves: rhbz#1056730
+- fix UnboundLocalError with fedup --device (wwoods)
+  Resolves: rhbz#1056717
+
 * Mon Dec 16 2013 David Shea <dshea@redhat.com> - 2:0.7.5-1
 - Add a generic problem summarizer
   Resolves: rhbz#1040684
