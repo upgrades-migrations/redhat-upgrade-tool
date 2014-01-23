@@ -69,7 +69,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
-* Thu Jan 23 2013 David Shea <dshea@redhat.com> - 2:0.7.6-1
+* Thu Jan 23 2014 David Shea <dshea@redhat.com> - 2:0.7.6-1
 - Remove the URL from the Source0 line (dshea)
   Resolves: rhbz#1056730
 - fix UnboundLocalError with fedup --device (wwoods)
