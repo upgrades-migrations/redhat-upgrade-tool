@@ -94,8 +94,6 @@ def parse_args(gui=False):
         dest='repos', help=_('enable one or more repos (wildcards allowed)'))
     net.add_argument('--disablerepo', metavar='REPOID', action=RepoAction,
         dest='repos', help=_('disable one or more repos (wildcards allowed)'))
-    net.add_argument('--repourl', metavar='REPOID=URL', action=RepoAction,
-        dest='repos', help=argparse.SUPPRESS)
     net.add_argument('--addrepo', metavar='REPOID=[@]URL',
         action=RepoAction, dest='repos',
         help=_('add the repo at URL (@URL for mirrorlist)'))
@@ -145,8 +143,13 @@ class RepoAction(argparse.Action):
             action = 'enable'
         elif opt.startswith('--disable'):
             action = 'disable'
-        elif opt.startswith('--repo') or opt.startswith('--addrepo'):
+        elif opt.startswith('--addrepo'):
             action = 'add'
+            # validate the argument
+            repoid, eq, url = value.partition("=")
+            if not (repoid and eq and "://" in url):
+                raise argparse.ArgumentError(self,
+                                        _("value should be REPOID=[@]URL"))
         curval.append((action, value))
         setattr(namespace, self.dest, curval)
 
@@ -212,7 +215,7 @@ def do_cleanup(args):
     misc_cleanup()
 
 def device_setup(args):
-    # treat --device like --repo REPO=file://$MOUNTPOINT
+    # treat --device like --addrepo REPO=file://$MOUNTPOINT
     if args.device:
         args.repos.append(('add', 'upgradedevice=file://%s' % args.device.mnt))
         args.instrepo = 'upgradedevice'
