@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.4
+Version:        0.7.5
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -74,6 +74,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Tue Jan 28 2014 David Shea <dshea@redhat.com> 0.7.5-1
+- Replace subprocess backports with the versions from Python 2.7 (dshea)
+  Resolves: rhbz#1054048
+- Use the output of losetup to find the loop file (dshea)
+  Related: rhbz#1054048
+- Fix a misnamed variable in device_or_mnt (dshea)
+  Related: rhbz#1054048
+- fix UnboundLocalError with fedup --device (wwoods)
+  Related: rhbz#1054048
+
 * Mon Dec  2 2013 David Shea <dshea@redhat.com> 0.7.4-1
 - Remove the URL from Source0
   Related: rhbz#1034906
