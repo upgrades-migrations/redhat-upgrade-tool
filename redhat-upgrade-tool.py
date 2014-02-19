@@ -70,7 +70,7 @@ def download_packages(f):
         raise SystemExit(0)
     # print dependency problems before we start the upgrade
     transprobs = f.describe_transaction_problems()
-    if transprobs:
+    if transprobs and not major_upgrade:
         print "WARNING: potential problems with upgrade"
         for p in transprobs:
             print "  " + p
@@ -93,6 +93,8 @@ def reboot():
     call(['systemctl', 'reboot'])
 
 def main(args):
+    global major_upgrade
+
     if args.clean:
         do_cleanup(args)
         return
@@ -114,6 +116,8 @@ def main(args):
     # major version upgrade
     if f.treeinfo.get('general', 'version').split('.')[0] != \
             platform.linux_distribution()[1].split('.')[0]:
+
+        major_upgrade = True
 
         # Check if preupgrade-assistant has been run
         if args.force:
@@ -215,7 +219,7 @@ def main(args):
 
     # list packages without updates, if any
     missing = sorted(f.find_packages_without_updates(), key=lambda p:p.nevra)
-    if missing:
+    if missing and not major_upgrade:
         message(_('Packages without updates:'))
         for p in missing:
             message("  %s" % p)
@@ -233,7 +237,9 @@ def main(args):
         #print _("If you start the upgrade now, packages from these repos will not be installed.")
 
     # warn about broken dependencies etc.
-    if probs:
+    # If this is a major version upgrade, the user has already been warned
+    # about all of this from preupgrade-assistant, so skip the warning here
+    if probs and not major_upgrade:
         print
         print _("WARNING: problems were encountered during transaction test:")
         for s in probs.summaries:
@@ -244,6 +250,7 @@ def main(args):
 
 if __name__ == '__main__':
     args = parse_args()
+    major_upgrade = False
 
     # TODO: use polkit to get privs for modifying bootloader stuff instead
     if os.getuid() != 0:
