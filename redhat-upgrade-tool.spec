@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.5.1
+Version:        0.7.6
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -74,11 +74,11 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
-* Wed Feb 12 2014 David Shea <dshea@redhat.com> 0.7.5.1-1
+* Wed Feb 12 2014 David Shea <dshea@redhat.com> 0.7.6-1
 - Add a generic problem summarizer.
   Resolves: rhbz#1040684
 - Fix the dependency problem summary
-  Resolves: rhbz#1040684
+  Related: rhbz#1040684
 
 * Tue Jan 28 2014 David Shea <dshea@redhat.com> 0.7.5-1
 - Replace subprocess backports with the versions from Python 2.7 (dshea)
