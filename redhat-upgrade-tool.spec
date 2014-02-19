@@ -10,11 +10,8 @@ Source0:        %{name}-%{version}.tar.xz
 
 Requires:       grubby
 
-%if 0%{?fedora} >= 17
-# Require updates to various packages where necessary to fix bugs.
-# Bug #910326
-Requires:       systemd >= systemd-44-23.fc17
-%endif
+# Require for preupgr --riskcheck
+Requires:       preupgrade-assistant >= 1.0.2-4
 
 BuildRequires:  python-libs
 BuildArch:      noarch
