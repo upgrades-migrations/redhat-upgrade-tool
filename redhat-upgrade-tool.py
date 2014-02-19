@@ -20,9 +20,10 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, sys, time
+import os, sys, time, platform
+from subprocess import CalledProcessError
 
-from redhat_upgrade_tool.util import call
+from redhat_upgrade_tool.util import call, check_call
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
@@ -107,6 +108,39 @@ def main(args):
                          repos=args.repos,
                          enable_plugins=args.enable_plugins,
                          disable_plugins=args.disable_plugins)
+
+    # Compare the first part of the version number in the treeinfo with the
+    # first part of the version number of the system to determine if this is a
+    # major version upgrade
+    if f.treeinfo.get('general', 'version').split('.')[0] != \
+            platform.linux_distribution()[1].split('.')[0]:
+
+        # Check if preupgrade-assistant has been run
+        if args.force:
+            log.info("Skipping check for preupgrade-assisant")
+
+        if not args.force:
+            if not os.path.exists('/root/preupgrade/all-xccdf.xml'):
+                print _("preupgrade-assistant has not been run.")
+                print _("To perform this upgrade, either run preupg or run redhat-upgrade-tool --force")
+                raise SystemExit(1)
+
+            # Run preupg --riskcheck
+            try:
+                check_call(['preupg', '--riskcheck'])
+            except CalledProcessError as e:
+                if e.returncode == 1:
+                    print _("preupgrade-assistant risk check found risks for this upgrade.")
+                    print _("Run preupg --riskcheck --verbose to view these risks.")
+                    print _("To continue with this upgrade, run redhat-upgrade-tool --force.")
+                elif e.returncode == 2:
+                    print _("preupgrade-assistant risk check found EXTREME risks for this upgrade.")
+                    print _("Run preupg --riskcheck --verbose to view these risks.")
+                    print _("Continuing with this upgrade is not recommended.")
+                else:
+                    print _("An error occured running preupg --riskcheck")
+                    print _("Continuing with this upgrade is not recommended.")
+                raise SystemExit(1)
 
     if args.nogpgcheck:
         f._override_sigchecks = True
