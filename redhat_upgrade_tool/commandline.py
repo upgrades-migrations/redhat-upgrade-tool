@@ -186,8 +186,18 @@ def VERSION(option, opt, value):
     distro, version, id = platform.linux_distribution()
     version = float(version)
 
-    if float(value) >= version:
-        return value
+    try:
+        value = float(value)
+    except ValueError:
+        # Check if the option was missing
+        if value[0] == '-':
+            msg = _("%s option requires an argument") % opt
+        else:
+            msg = _("Invalid value for version")
+        raise optparse.OptionValueError(msg)
+
+    if value >= version:
+        return str(value)
     else:
         msg = _("version must be greater than %i") % version
         raise optparse.OptionValueError(msg)
