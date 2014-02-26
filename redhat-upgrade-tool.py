@@ -21,7 +21,7 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os, sys, time, platform
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, Popen, PIPE
 
 from redhat_upgrade_tool.util import call, check_call
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
@@ -124,27 +124,38 @@ def main(args):
             log.info("Skipping check for preupgrade-assisant")
 
         if not args.force:
-            if not os.path.exists('/root/preupgrade/all-xccdf.xml'):
-                print _("preupgrade-assistant has not been run.")
-                print _("To perform this upgrade, either run preupg or run redhat-upgrade-tool --force")
-                raise SystemExit(1)
-
             # Run preupg --riskcheck
             try:
                 check_call(['preupg', '--riskcheck'])
             except CalledProcessError as e:
                 if e.returncode == 1:
-                    print _("preupgrade-assistant risk check found risks for this upgrade.")
-                    print _("Run preupg --riskcheck --verbose to view these risks.")
-                    print _("To continue with this upgrade, run redhat-upgrade-tool --force.")
+                    print _("Preupgrade assistant risk check found risks for this upgrade.")
+                    print _("You can run preupg --riskcheck --verbose to view these risks.")
+                    print _("Addressing high risk issues is required before the in-place upgrade")
+                    print _("and ignoring these risks may result in a broken upgrade and unsupported upgrade.")
+                    print _("Please backup your data.")
+                    print ""
+                    print _("List of high risk issues:")
+
+                    p = Popen(['preupg', '--riskcheck', '--verbose'], stdout=PIPE)
+                    for line in p.communicate()[0].splitlines():
+                        if line.startswith("INPLACERISK: HIGH:"):
+                            print line
+                    p.wait()
+                    print ""
+                    answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                    # TRANSLATORS: y for yes
+                    if answer.lower() != _('y'):
+                        raise SystemExit(1)
                 elif e.returncode == 2:
                     print _("preupgrade-assistant risk check found EXTREME risks for this upgrade.")
                     print _("Run preupg --riskcheck --verbose to view these risks.")
                     print _("Continuing with this upgrade is not recommended.")
+                    raise SystemExit(1)
                 else:
-                    print _("An error occured running preupg --riskcheck")
-                    print _("Continuing with this upgrade is not recommended.")
-                raise SystemExit(1)
+                    print _("preupgrade-assistant has not been run.")
+                    print _("To perform this upgrade, either run preupg or run redhat-upgrade-tool --force")
+                    raise SystemExit(1)
 
     if args.nogpgcheck:
         f._override_sigchecks = True
