@@ -124,6 +124,10 @@ def parse_args(gui=False):
         args.repos.append(('add', 'cmdline-instrepo=%s' % args.instrepo))
         args.instrepo = 'cmdline-instrepo'
 
+    # If network is requested, require an instrepo
+    if args.network and not args.instrepo:
+        p.error(_('--instrepo is required with --network'))
+
     if not gui:
         if args.clean:
             args.resetbootloader = True
