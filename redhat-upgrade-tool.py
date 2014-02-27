@@ -90,7 +90,7 @@ def transaction_test(pkgs):
     return (probs, rv)
 
 def reboot():
-    call(['systemctl', 'reboot'])
+    call(['reboot'])
 
 def main(args):
     global major_upgrade
