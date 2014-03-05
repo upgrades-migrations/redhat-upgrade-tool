@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.7
+Version:        0.7.8
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -71,6 +71,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Mar  5 2014 David Shea <dshea@redhat.com> 0.7.8-1
+- Remove the unused systemd requires.
+  Related: rhbz#1059447
+- Check for preupgrade-assistant risks
+  Resolves: rhbz#1059447
+- Don't display package problems covered by preupgrade-assistant
+  Related: rhbz#1059447
+- Revise the preupgrade HIGH risk message.
+  Related: rhbz#1059447
+
 * Wed Feb 26 2014 David Shea <dshea@redhat.com> 0.7.7-1
 - Remove the output parameter from CalledProcessException
   Resolves: rhbz#1054048
