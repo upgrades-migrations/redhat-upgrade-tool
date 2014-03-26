@@ -149,6 +149,10 @@ def modify_bootloader(kernel, initrd):
         # See https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=896010
         args.append("enforcing=0")
 
+    # Workaround for systemd not reaching sysinit.target in RHEL7 dracut
+    args.append('rd.plymouth=0')
+    args.append('plymouth.enable=0')
+
     boot.add_entry(kernel, initrd, banner=_("System Upgrade"), kargs=args,
             remove_kargs=remove_args)
 
