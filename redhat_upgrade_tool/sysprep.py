@@ -160,6 +160,9 @@ def modify_bootloader(kernel, initrd):
     args.append('rd.plymouth=0')
     args.append('plymouth.enable=0')
 
+    # Screen blanking just makes the screen broken
+    args.append("consoleblank=0")
+
     boot.add_entry(kernel, initrd, banner=_("System Upgrade"), kargs=args,
             remove_kargs=remove_args)
 
