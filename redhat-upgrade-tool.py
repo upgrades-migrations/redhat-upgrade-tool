@@ -25,7 +25,7 @@ from subprocess import call, check_call, CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
-from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount
+from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -247,6 +247,9 @@ def main(args):
 
     if args.iso:
         media.umount(args.device.mnt)
+
+    if args.cleanup_post:
+        setup_cleanup_post()
 
     if args.reboot:
         reboot()

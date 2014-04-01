@@ -42,6 +42,8 @@ def parse_args(gui=False):
 
     p.add_argument('-f', '--force', action='store_true', default=False,
             help=_('continue even if preupgrade-assistant risk check fails'))
+    p.add_argument('--cleanup-post', action='store_true', default=False,
+            help=_('cleanup old package after the upgrade'))
 
     p.add_argument('--debuglog', default='/var/log/%s.log' % __package__,
         help=_('write lots of debugging output to the given file'))

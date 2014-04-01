@@ -33,6 +33,13 @@ log = logging.getLogger(__package__+".sysprep")
 
 upgrade_target_requires = "/lib/systemd/system/system-upgrade.target.requires"
 
+def setup_cleanup_post():
+    '''Set a flag in upgrade.conf to be read by preupgrade-assistant,
+       signalling it to cleanup old packages in the post scripts.'''
+
+    with Config(upgradeconf) as conf:
+        conf.set('postupgrade', 'cleanup', 'True')
+
 def link_pkgs(pkgs):
     '''link the named pkgs into packagedir, overwriting existing files.
        also removes any .rpm files in packagedir that aren't in pkgs.
