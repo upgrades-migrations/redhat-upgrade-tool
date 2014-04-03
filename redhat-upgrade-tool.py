@@ -142,13 +142,10 @@ def main(args):
                 print _("and ignoring these risks may result in a broken upgrade and unsupported upgrade.")
                 print _("Please backup your data.")
                 print ""
-                print _("List of high risk issues:")
+                print _("List of issues:")
 
-                lines = xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
-                for line in lines:
-                    if line.startswith("INPLACERISK: HIGH:"):
-                        print line
-                print ""
+                xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
+
                 answer = raw_input(_("Continue with the upgrade [Y/N]? "))
                 # TRANSLATORS: y for yes
                 if answer.lower() != _('y'):
