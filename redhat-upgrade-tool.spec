@@ -13,6 +13,9 @@ Requires:       grubby
 # Require for preupgr --riskcheck
 Requires:       preupgrade-assistant >= 1.0.2-4
 
+# https://bugzilla.redhat.com/show_bug.cgi?id=1038299
+Requires:       yum >= 3.2.29-43
+
 BuildRequires:  python-libs
 BuildArch:      noarch
 
