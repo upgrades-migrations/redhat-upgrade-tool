@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.8
+Version:        0.7.9
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -71,6 +71,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Thu Apr  3 2014 David Shea <dshea@redhat.com> 0.7.9-1
+- Disable plymouth to workaround not reaching sysinit.target
+  Resolves: rhbz#1060789
+- Handle missing version arguments
+  Resolves: rhbz#1069836
+- Require --instrepo with --network.
+  Resolves: rhbz#1070080
+- Fix the reboot command for RHEL 6.
+  Resolves: rhbz#1070821
+
 * Wed Mar  5 2014 David Shea <dshea@redhat.com> 0.7.8-1
 - Remove the unused systemd requires.
   Related: rhbz#1059447
