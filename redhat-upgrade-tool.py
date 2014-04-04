@@ -209,6 +209,9 @@ def main(args):
     if not args.skippkgs:
         prep_upgrade(pkgs)
 
+    # Save the repo configuration
+    f.save_repo_configs()
+
     if not args.skipbootloader:
         if args.skipkernel:
             print "warning: --skipkernel without --skipbootloader"
