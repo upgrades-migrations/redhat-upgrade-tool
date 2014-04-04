@@ -212,15 +212,28 @@ class UpgradeDownloader(yum.YumBase):
 
         return self.disabled_repos
 
-    # XXX currently unused
-    def save_repo_configs():
+    def save_repo_configs(self):
         '''save repo configuration files for later use'''
         repodir = os.path.join(cachedir, 'yum.repos.d')
         mkdir_p(repodir)
         for repo in self.repos.listEnabled():
             repofile = os.path.join(repodir, "%s.repo" % repo.id)
             try:
-                repo.write(open(repofile), 'w')
+                with open(repofile, 'w') as f:
+                    f.write("[%s]\n" % repo.id)
+                    f.write("name=Upgrade - %s\n" % repo.id)
+                    f.write("enabled=1\n")
+                    if repo.mirrorlist:
+                        f.write("mirrorlist=%s\n" % repo.mirrorlist)
+                    elif repo.metalink:
+                        f.write("metalink=%s\n" % repo.metalink)
+                    elif repo.baseurl:
+                        f.write("baseurl=%s\n" % repo.baseurl[0])
+                    else:
+                        log.error("repo %s has no baseurl, mirrorlist or metalink", repo.id)
+                        f.close()
+                        os.unlink(repofile)
+                        continue
             except IOError as e:
                 log.warn("couldn't write repofile for %s: %s", repo.id, str(e))
 
