@@ -64,7 +64,7 @@ class BuildScripts(build_scripts):
                 os.rename(outfile, newfile)
 
 setup(name="redhat-upgrade-tool",
-      version="0.7.10",
+      version="0.7.11",
       description="Red Hat Upgrade",
       long_description="",
       author="Will Woods",
