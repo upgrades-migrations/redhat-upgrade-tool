@@ -73,7 +73,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 %changelog
 * Fri Apr 11 2014 David Shea <dshea@redhat.com> 0.7.11-1
 - Save the repo config files to /var/tmp/system-upgrade/yum.repos.d
-  Resolves: rhbz#080966
+  Resolves: rhbz#1080966
 
 * Thu Apr  3 2014 David Shea <dshea@redhat.com> 0.7.10-1
 - Revise how preupgrade issues are printed
