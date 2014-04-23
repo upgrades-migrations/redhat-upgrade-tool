@@ -22,6 +22,7 @@
 
 import os, sys, time, platform
 from subprocess import call, check_call, CalledProcessError, Popen, PIPE
+from ConfigParser import NoOptionError
 
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount
@@ -158,6 +159,27 @@ def main(args):
                 print _("preupgrade-assistant has not been run.")
                 print _("To perform this upgrade, either run preupg or run redhat-upgrade-tool --force")
                 raise SystemExit(1)
+
+    # Check that we are upgrading to the same variant
+    if not args.force:
+        distro = platform.linux_distribution()[0]
+        if not distro.startswith("Red Hat Enterprise Linux "):
+            print _("Invalid distribution: %s") % distro
+            raise SystemExit(1)
+
+        from_variant = distro[len('Red Hat Enterprise Linux '):]
+        try:
+            to_variant = f.treeinfo.get('general', 'variant')
+        except NoOptionError:
+            print _("Upgrade repository is not a Red Hat Enterprise Linux repository")
+            raise SystemExit(1)
+
+        if from_variant != to_variant:
+            print _("Upgrade requested from Red Hat Enterprise Linux %s to %s") % (from_variant, to_variant)
+            print _("Upgrades between Red Hat Enterprise Linux variants is not supported.")
+            raise SystemExit(1)
+    else:
+        log.info("Skipping variant check")
 
     if args.nogpgcheck:
         f._override_sigchecks = True
