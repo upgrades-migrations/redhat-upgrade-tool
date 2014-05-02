@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.11
+Version:        0.7.12
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -71,6 +71,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri May  2 2014 David Shea <dshea@redhat.com> 0.7.12-1
+- Added a check to prevent cross-variant upgrades.
+  Resolves: rhbz#1070114
+
 * Fri Apr 11 2014 David Shea <dshea@redhat.com> 0.7.11-1
 - Save the repo config files to /var/tmp/system-upgrade/yum.repos.d
   Resolves: rhbz#1080966
