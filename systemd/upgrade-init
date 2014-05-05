@@ -74,6 +74,15 @@ grep 'upgrade\.debug' /proc/cmdline && set -x
 #
 # Otherwise, the system should be fully mounted and ready to upgrade now.
 
+# 1.5) do all the stuff that would have been run for system-upgrade.target.requires
+echo "Running prep scripts..."
+for prep_script in /var/lib/system-upgrade/upgrade-prep/* ; do
+    if [ -x "$prep_script" ]; then
+        echo "Running ${prep_script}..."
+        "$prep_script"
+    fi
+done
+
 # 2) prep for upgrade
 echo "Preparing for system upgrade:"
 /usr/libexec/upgrade-prep.sh

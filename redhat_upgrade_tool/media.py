@@ -127,24 +127,20 @@ def systemd_escape(path):
         newpath += systemd_escape_char(ch)
     return newpath
 
-unit_tmpl = """\
-[Unit]
-Description={desc}
-{unitopts}
+def shell_escape(string):
+    return "'%s'" % string.replace("'", "'\\''")
 
-[Mount]
-What={mount.dev}
-Where={mount.mnt}
-Type={mount.type}
-Options={mount.opts}
-"""
-
-def write_systemd_unit(mount, unitdir, desc=None, unitopts=""):
+def write_prep_mount(mount, unitdir, desc=None, unitopts=""):
     if desc is None:
         desc = "Upgrade Media"
     if isloop(mount.dev):
         mount = fix_loop_entry(mount)
     unit = join(unitdir, systemd_escape(mount.mnt)+'.mount')
     with open(unit, 'w') as u:
-        u.write(unit_tmpl.format(desc=desc, unitopts=unitopts, mount=mount))
+        u.write("mount -t %s -o %s %s %s\n" %
+                (shell_escape(mount.type),
+                 shell_escape(mount.opts),
+                 shell_escape(mount.dev),
+                 shell_escape(mount.mnt)))
+    os.chmod(unit, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
     return unit

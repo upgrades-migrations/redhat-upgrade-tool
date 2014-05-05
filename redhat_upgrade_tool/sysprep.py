@@ -23,7 +23,7 @@ from shutil import copy2
 from . import _
 from . import cachedir, packagedir, packagelist, update_img_dir
 from . import upgradeconf, upgradelink, upgraderoot
-from .media import write_systemd_unit
+from .media import write_prep_mount
 from .util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
 from .conf import Config
 from . import boot
@@ -31,7 +31,7 @@ from . import boot
 import logging
 log = logging.getLogger(__package__+".sysprep")
 
-upgrade_target_requires = "/lib/systemd/system/system-upgrade.target.requires"
+upgrade_prep_dir = packagedir + "/upgrade-prep"
 
 def link_pkgs(pkgs):
     '''link the named pkgs into packagedir, overwriting existing files.
@@ -102,11 +102,11 @@ def setup_media_mount(mnt):
     log.info("setting up mount for %s at %s", mnt.dev, mountpath)
     mkdir_p(mountpath)
     # make a directory to place a unit
-    mkdir_p(upgrade_target_requires)
+    mkdir_p(upgrade_prep_dir)
     # make a modified mnt entry that puts it at mountpath
     mediamnt = mnt._replace(rawmnt=mountpath)
     # finally, write out a systemd unit to mount media there
-    unit = write_systemd_unit(mediamnt, upgrade_target_requires)
+    unit = write_prep_mount(mediamnt, upgrade_prep_dir)
     log.info("wrote %s", unit)
 
 def setup_upgraderoot():
@@ -215,6 +215,6 @@ def remove_cache():
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
     rm_f(upgradelink)
-    for d in (upgraderoot, upgrade_target_requires):
+    for d in (upgraderoot, upgrade_prep_dir):
         log.info("removing %s", d)
         rm_rf(d)
