@@ -214,15 +214,15 @@ class UpgradeDownloader(yum.YumBase):
 
     def save_repo_configs(self):
         '''save repo configuration files for later use'''
-        repodir = os.path.join(cachedir, 'yum.repos.d')
+        repodir = os.path.join('/etc/yum.repos.d')
         mkdir_p(repodir)
         for repo in self.repos.listEnabled():
-            repofile = os.path.join(repodir, "%s.repo" % repo.id)
+            repofile = os.path.join(repodir, "redhat-upgrade-%s.repo" % repo.id)
             try:
                 with open(repofile, 'w') as f:
-                    f.write("[%s]\n" % repo.id)
+                    f.write("[redhat-upgrade-%s]\n" % repo.id)
                     f.write("name=Upgrade - %s\n" % repo.id)
-                    f.write("enabled=1\n")
+                    f.write("enabled=0\n")
                     if repo.mirrorlist:
                         f.write("mirrorlist=%s\n" % repo.mirrorlist)
                     elif repo.metalink:
