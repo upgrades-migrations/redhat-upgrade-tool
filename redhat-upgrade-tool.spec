@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.13
+Version:        0.7.14
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -71,6 +71,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Tue May 20 2014 David Shea <dshea@redhat.com> 0.7.14-1
+- Move the repo files to /etc/yum.repos.d
+  Related: rhbz#1080966
+
 * Thu May  8 2014 David Shea <dshea@redhat.com> 0.7.13-1
 - Move system-upgrade.target.requires mounts into a shell script
   Resolves: rhbz#1094193
