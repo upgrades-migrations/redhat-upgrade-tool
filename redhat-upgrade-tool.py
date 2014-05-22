@@ -24,13 +24,14 @@ import os, sys, time, platform
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
-from redhat_upgrade_tool.util import call, check_call
+from redhat_upgrade_tool.util import call, check_call, rm_f
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
 from redhat_upgrade_tool import textoutput as output
+from redhat_upgrade_tool import upgradeconf
 
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
@@ -193,6 +194,10 @@ def main(args):
         print "cleaning metadata"
         f.cleanMetadata()
         return
+
+    # Cleanup old conf files
+    log.info("Clearing %s", upgradeconf)
+    rm_f(upgradeconf)
 
     # TODO: error msg generation should be shared between CLI and GUI
     if args.skipkernel:
