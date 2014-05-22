@@ -28,6 +28,8 @@ from yum.Errors import YumBaseError
 from yum.parser import varReplace
 from yum.constants import TS_REMOVE_STATES
 from yum.misc import gpgme
+from gzip import GzipFile
+from rhsm.certificate import create_from_pem
 
 enabled_plugins = ['blacklist', 'whiteout']
 disabled_plugins = ['rpm-warm-cache', 'remove-with-leaves', 'presto',
@@ -36,6 +38,7 @@ disabled_plugins = ['rpm-warm-cache', 'remove-with-leaves', 'presto',
 from . import _
 from . import cachedir, upgradeconf, kernelpath, initrdpath, defaultkey
 from . import mirrormanager
+from . import packagedir
 from .util import listdir, mkdir_p, rm_rf
 from shutil import copy2
 
@@ -308,6 +311,44 @@ class UpgradeDownloader(yum.YumBase):
         # check signatures of downloaded packages
         if updates:
             self._checkSignatures(updates, callback)
+
+        # store RHSM productid certificates
+        # (this code is inspired by is taken from subscription_manager.productid)
+        used_repos = set([p.repoid for p in updates])
+        for repo in self.repos.listEnabled():
+            # skip repos we have not used to download any package
+            if repo.id not in used_repos:
+                continue
+
+            # skip repos we don't have productid for
+            try:
+                fn = repo.retrieveMD('productid')
+                if fn.endswith('.gz'):
+                    f = GzipFile(fn)
+                else:
+                    f = open(fn)
+                try:
+                    pem = f.read()
+                    cert = create_from_pem(pem)
+                finally:
+                    f.close()
+            except yum.Errors.RepoMDError, e:
+                log.warn("Error loading productid metadata for %s." % repo)
+                continue
+            except Exception, e:
+                log.warn("Error loading productid metadata for %s." % repo)
+                log.exception(e)
+                continue
+            if cert is None:
+                continue
+
+            product = cert.products[0]
+
+            log.debug("product cert: %s repo: %s" % (product.id, repo.id))
+
+            path = os.path.join(packagedir, '%s.pem' % product.id)
+            cert.write(path)
+            log.info("Downloaded product cert %s: %s %s" % (product.id, product.name, cert.path))
 
     def clean_cache(self, keepfiles):
         log.info("checking for unneeded rpms in cache")
