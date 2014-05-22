@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.15
+Version:        0.7.16
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -74,6 +74,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Thu May 22 2014 David Shea <dshea@redhat.com> 0.7.15-1
+- Run realpath on --device arguments.
+  Resolves: rhbz#1083169
+
 * Thu May 22 2014 David Shea <dshea@redhat.com> 0.7.15-1
 - Add an option --cleanup-post to cleanup packages in post scripts.
   Resolves: rhbz#1070603
