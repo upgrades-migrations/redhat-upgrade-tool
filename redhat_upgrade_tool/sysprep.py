@@ -219,8 +219,18 @@ def remove_cache():
     cleanup = cleanup.split(';')
     cleanup += [cachedir, packagedir] # just to be sure
     for d in cleanup:
-        log.info("removing %s", d)
-        rm_rf(d)
+        # Leave upgrade.conf behind for use by post-upgrade-scripts
+        # See https://bugzilla.redhat.com/show_bug.cgi?id=1100391
+        if d == packagedir:
+            log.info("removing files from %s", d)
+            files = os.listdir(d)
+            if 'upgrade.conf' in files:
+                files.remove('upgrade.conf')
+            for f in files:
+                rm_rf(d + "/" + f)
+        else:
+            log.info("removing %s", d)
+            rm_rf(d)
 
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
