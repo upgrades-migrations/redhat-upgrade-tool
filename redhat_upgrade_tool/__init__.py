@@ -32,6 +32,7 @@ Your pal,
 '''
 
 import logging
+import os
 from .logutils import NullHandler
 log = logging.getLogger(__package__)
 log.addHandler(NullHandler())
@@ -47,6 +48,8 @@ initrdpath = '/boot/initramfs-%s.img' % kernel_id
 
 cachedir = '/var/tmp/system-upgrade'
 packagedir = '/var/lib/system-upgrade'
+if not os.path.exists(packagedir):
+    os.makedirs(packagedir, "0755")
 packagelist = packagedir + '/package.list'
 upgradeconf = packagedir + '/upgrade.conf'
 upgradelink = '/system-upgrade'
