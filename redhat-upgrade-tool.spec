@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.17
+Version:        0.7.18
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -74,6 +74,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri May 23 2014 David Shea <dshea@redhat.com> 0.7.16-1
+- Fix the arg used with --device (bmr)
+  Related: rhbz#1083169
+
 * Fri May 23 2014 David Shea <dshea@redhat.com> 0.7.16-1
 - Attempt to bring the network up during upgrade-init
   Resolves: rhbz#1089212
