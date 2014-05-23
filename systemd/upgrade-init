@@ -83,6 +83,12 @@ for prep_script in /var/lib/system-upgrade/upgrade-prep/* ; do
     fi
 done
 
+# 1.6) attempt to start the network
+echo "Bringing network up..."
+if [ -x /etc/init.d/network ]; then
+    /etc/init.d/network start
+fi
+
 # 2) prep for upgrade
 echo "Preparing for system upgrade:"
 /usr/libexec/upgrade-prep.sh
