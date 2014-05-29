@@ -9,6 +9,7 @@ URL:            https://github.com/dashea/redhat-upgrade-tool
 Source0:        %{name}-%{version}.tar.xz
 
 Requires:       grubby
+Requires:       python-rhsm
 
 # Require for preupgr --riskcheck
 Requires:       preupgrade-assistant >= 1.0.2-4
