@@ -21,6 +21,7 @@ import os, optparse, platform, sys
 from copy import copy
 
 from . import media
+from . import packagedir
 from .sysprep import reset_boot, remove_boot, remove_cache, misc_cleanup
 from . import _
 
@@ -215,6 +216,15 @@ class Option(optparse.Option):
     TYPE_CHECKER["VERSION"] = VERSION
 
 def do_cleanup(args):
+    # FIXME: This installs RHSM product id certificates in case that
+    # redhat-upgrade-dracut have not installed them.
+    # It may be dropped when new redhat-upgrade-dracut is part of
+    # install images.
+    for cert in filter(lambda fn: fn.endswith('.pem'), os.listdir(packagedir)):
+        old_fn = os.path.join(packagedir, cert)
+        new_fn = '/etc/pki/product/%s' % cert
+        print "Installing product cert %s to %s" % (old_fn, new_fn)
+        os.rename(old_fn, new_fn)
     if not args.skipbootloader:
         print "resetting bootloader config"
         reset_boot()
