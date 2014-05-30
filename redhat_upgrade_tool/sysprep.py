@@ -160,6 +160,10 @@ def modify_bootloader(kernel, initrd):
     args.append('rd.plymouth=0')
     args.append('plymouth.enable=0')
 
+    # Leave the network names alone so that the RHEL-6 initscripts can
+    # bring interfaces up
+    args.append('net.ifnames=0')
+
     # Screen blanking just makes the screen broken
     args.append("consoleblank=0")
 
