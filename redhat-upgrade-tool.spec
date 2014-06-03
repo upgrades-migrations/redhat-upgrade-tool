@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.20
+Version:        0.7.21
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Tue Jun  3 2014 David Shea <dshea@redhat.com> 0.7.21-1
+- Workaround .pem being removed by redhat-upgrade-tool --clean (jdornak)
+  Related: rhbz#1071902
+- Always create the upgrade.conf directory
+  Related: rhbz#1070603
+- Copy upgrade.conf to /root/preupgrade
+  Related: rhbz#1070603
+- Revert "Don't cleanup upgrade.conf for now"
+  Related: rhbz#1070603
+
 * Mon Jun  2 2014 David Shea <dshea@redhat.com> 0.7.20-1
 - Add net.ifnames=0 to the boot command line
   Resolves: rhbz#1089212
