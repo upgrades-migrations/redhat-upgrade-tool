@@ -430,7 +430,6 @@ class UpgradeDownloader(yum.YumBase):
                 raise
 
         # Save kernel/initrd info so we can clean it up later
-        mkdir_p(os.path.dirname(upgradeconf))
         with Config(upgradeconf) as conf:
             conf.set("boot", "kernel", kernel)
             conf.set("boot", "initrd", initrd)

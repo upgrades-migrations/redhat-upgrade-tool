@@ -24,7 +24,7 @@ import os, sys, time, platform
 from subprocess import call, check_call, CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
-from redhat_upgrade_tool.util import rm_f
+from redhat_upgrade_tool.util import rm_f, mkdir_p
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
@@ -198,6 +198,7 @@ def main(args):
     # Cleanup old conf files
     log.info("Clearing %s", upgradeconf)
     rm_f(upgradeconf)
+    mkdir_p(os.path.dirname(upgradeconf))
 
     # TODO: error msg generation should be shared between CLI and GUI
     if args.skipkernel:
