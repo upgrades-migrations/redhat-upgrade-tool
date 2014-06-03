@@ -20,7 +20,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, sys, time, platform
+import os, sys, time, platform, shutil
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
@@ -257,6 +257,12 @@ def main(args):
 
     if args.cleanup_post:
         setup_cleanup_post()
+
+    # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
+    # Copy upgrade.conf to /root/preupgrade so that it won't be removed
+    # before the postupgrade scripts are run.
+    mkdir_p('/root/preupgrade')
+    shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
 
     if args.reboot:
         reboot()
