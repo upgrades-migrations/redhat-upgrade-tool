@@ -359,6 +359,9 @@ class UpgradeDownloader(yum.YumBase):
 
             log.debug("product cert: %s repo: %s" % (product.id, repo.id))
 
+            # temporarily use different directory for storing certificates
+            packagedir = '/root/preupgrade/productid'
+            os.makedirs(packagedir)
             path = os.path.join(packagedir, '%s.pem' % product.id)
             cert.write(path)
             log.info("Downloaded product cert %s: %s %s" % (product.id, product.name, cert.path))
