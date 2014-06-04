@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.21
+Version:        0.7.22
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Jun  4 2014 David Shea <dshea@redhat.com> 0.7.22-1
+- Use the mkdir_p wrapper instead of os.makedirs
+  Resolves: rhbz#1104780
+
 * Tue Jun  3 2014 David Shea <dshea@redhat.com> 0.7.21-1
 - Workaround .pem being removed by redhat-upgrade-tool --clean (jdornak)
   Related: rhbz#1071902
