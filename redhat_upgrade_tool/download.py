@@ -226,6 +226,7 @@ class UpgradeDownloader(yum.YumBase):
                     f.write("[redhat-upgrade-%s]\n" % repo.id)
                     f.write("name=Upgrade - %s\n" % repo.id)
                     f.write("enabled=0\n")
+                    f.write("skip_if_unavailable=True\n")
                     if repo.mirrorlist:
                         f.write("mirrorlist=%s\n" % repo.mirrorlist)
                     elif repo.metalink:
