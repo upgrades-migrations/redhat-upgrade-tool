@@ -166,8 +166,7 @@ class UpgradeDownloader(yum.YumBase):
         # We need to read .repo files before we can enable/disable them, so:
         self.repos # implicit repo setup! ha ha! what fun!
 
-        if self.version is None: # i.e. no --network arg
-            self.repos.disableRepo('*')
+        self.repos.disableRepo('*')
 
         # user overrides to enable/disable repos.
         # NOTE: will raise YumBaseError if there are problems
