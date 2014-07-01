@@ -17,7 +17,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os
+import os, glob
 from shutil import copy2
 
 from . import _
@@ -226,9 +226,30 @@ def remove_cache():
         log.info("removing %s", d)
         rm_rf(d)
 
+def disable_old_repos():
+    repodir = '/etc/yum.repos.d'
+    for repo in glob.glob(repodir + '/*.repo'):
+        with open(repo, 'r') as repofile:
+            repodata = repofile.read()
+        disabled_data = repodata.replace('enabled=1', '# disabled by redhat-upgrade-tool\nenabled=0')
+        if disabled_data != repodata:
+            with open(repo, 'w') as repofile:
+                repofile.write(disabled_data)
+
+
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
     rm_f(upgradelink)
     for d in (upgraderoot, upgrade_prep_dir):
         log.info("removing %s", d)
         rm_rf(d)
+
+    # Un-disable the repo files
+    repodir = '/etc/yum.repos.d'
+    for repo in glob.glob(repodir + '/*.repo'):
+        with open(repo, 'r') as repofile:
+            repodata = repofile.read()
+        enabled_data = repodata.replace('# disabled by redhat-upgrade-tool\nenabled=0', 'enabled=1')
+        if enabled_data != repodata:
+            with open(repo, 'w') as repofile:
+                repofile.write(enabled_data)
