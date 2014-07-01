@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.23
+Version:        0.7.24
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,11 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Tue Jul  1 2014 David Shea <dshea@redhat.com> 0.7.24-1
+- Upgrade repos are enabled by default (phracek)
+- Always disable old repos
+- Disable repos from RHEL-6 before starting the upgrade.
+
 * Wed Jun 25 2014 David Shea <dshea@redhat.com> 0.7.23-1
 - Skip unavailable repos during the postupgrade scripts
   Resolves: rhbz#1106401
