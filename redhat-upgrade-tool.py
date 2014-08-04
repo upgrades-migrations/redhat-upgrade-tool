@@ -32,6 +32,7 @@ from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
 from redhat_upgrade_tool import textoutput as output
 from redhat_upgrade_tool import upgradeconf
+from redhat_upgrade_tool import rhel_gpgkey_path
 
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
@@ -194,6 +195,20 @@ def main(args):
 
     if args.nogpgcheck:
         f._override_sigchecks = True
+    elif not f.instrepo.gpgcheck:
+        # If instrepo is a Red Hat repo, add the gpg key and reload the repos
+        try:
+            if f.treeinfo.get('product', 'name') == 'Red Hat Enterprise Linux':
+                log.info("Reloading repos with GPG key")
+                args.repos.append(('gpgkey', '%s=%s' % (f.instrepo.name, rhel_gpgkey_path)))
+                f = setup_downloader(version=args.network,
+                                     cacheonly=args.cacheonly,
+                                     instrepo=args.instrepo,
+                                     repos=args.repos,
+                                     enable_plugins=args.enable_plugins,
+                                     disable_plugins=args.disable_plugins)
+        except NoOptionError:
+            log.debug("No product name found, skipping gpg check")
 
     if args.expire_cache:
         print "expiring cache files"
