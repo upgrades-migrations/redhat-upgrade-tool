@@ -245,11 +245,17 @@ def do_cleanup(args):
     # redhat-upgrade-dracut have not installed them.
     # It may be dropped when new redhat-upgrade-dracut is part of
     # install images.
-    for cert in filter(lambda fn: fn.endswith('.pem'), os.listdir(packagedir)):
-        old_fn = os.path.join(packagedir, cert)
-        new_fn = '/etc/pki/product/%s' % cert
-        print "Installing product cert %s to %s" % (old_fn, new_fn)
-        os.rename(old_fn, new_fn)
+    try:
+        for cert in filter(lambda fn: fn.endswith('.pem'), os.listdir(packagedir)):
+            old_fn = os.path.join(packagedir, cert)
+            new_fn = '/etc/pki/product/%s' % cert
+            print "Installing product cert %s to %s" % (old_fn, new_fn)
+            os.rename(old_fn, new_fn)
+    except OSError as e:
+        import errno
+        if e.errno != errno.ENOENT:
+            raise
+
     if not args.skipbootloader:
         print "resetting bootloader config"
         reset_boot()
