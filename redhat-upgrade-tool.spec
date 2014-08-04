@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.24
+Version:        0.7.25
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,19 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Aug  4 2014 David Shea <dshea@redhat.com> 0.7.25-1
+- Add --instrepokey (wwoods)
+  Related: rhbz#1115532
+  Related: rhbz#1123915
+- Automatically add the GPG key to Red Hat repos.
+  Resolves: rhbz#1123915
+- Revert "fetch/verify .treeinfo.signed if gpgcheck is on"
+  Related: rhbz#1123915
+- Cleanup repo files added by redhat-upgrade-tool
+- Fix a crash if cleaning up without /var/lib/system-upgrade
+- Write GPG information to the yum repo files
+  Resolves: rhbz#1115532
+
 * Tue Jul  1 2014 David Shea <dshea@redhat.com> 0.7.24-1
 - Upgrade repos are enabled by default (phracek)
 - Always disable old repos
