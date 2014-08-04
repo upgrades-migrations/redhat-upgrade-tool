@@ -17,7 +17,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os
+import os, glob
 from shutil import copy2
 
 from . import _
@@ -208,3 +208,9 @@ def misc_cleanup():
     for d in (upgraderoot, upgrade_target_requires):
         log.info("removing %s", d)
         rm_rf(d)
+
+    repodir = '/etc/yum.repos.d'
+
+    log.info("removing repo files")
+    for repo in glob.glob(repodir + '/redhat-upgrade-*.repo'):
+        rm_rf(repo)
