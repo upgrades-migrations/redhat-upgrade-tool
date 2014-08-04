@@ -379,38 +379,6 @@ class UpgradeDownloader(yum.YumBase):
                 log.info("failed to remove %s", f)
         # TODO remove dirs that don't belong to any repo
 
-    def _get_treeinfo(self):
-        mkdir_p(cachedir)
-        outfile = os.path.join(cachedir, '.treeinfo')
-
-        if self.cacheonly:
-            log.debug("using cached .treeinfo %s", outfile)
-            return outfile
-
-        if self.instrepo.gpgcheck and not self._override_sigchecks:
-            log.debug("fetching .treeinfo.signed from '%s'", self.instrepoid)
-            fn = self.instrepo.grab.urlgrab('.treeinfo.signed',
-                                            outfile+'.signed',
-                                            reget=None)
-
-            try:
-                log.info("verifying .treeinfo.signed")
-                # verify file and write plaintext to outfile
-                errs = self.check_signed_file(fn, outfile)
-            except gpgme.GpgmeError:
-                raise yum.Errors.YumGPGCheckError(e.strerror)
-            if errs:
-                raise yum.Errors.YumGPGCheckError(', '.join(errs))
-            else:
-                log.info(".treeinfo.signed was signed with a trusted key")
-            return outfile
-
-        else:
-            log.debug("fetching .treeinfo from '%s'", self.instrepoid)
-            fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
-                                            reget=None)
-            return fn
-
     @property
     def instrepo(self):
         return self.repos.getRepo(self.instrepoid)
@@ -418,8 +386,19 @@ class UpgradeDownloader(yum.YumBase):
     @property
     def treeinfo(self):
         if self._treeinfo is None:
-            self._treeinfo = Treeinfo(self._get_treeinfo())
-            log.debug("validating .treeinfo")
+            mkdir_p(cachedir)
+            outfile = os.path.join(cachedir, '.treeinfo')
+            if self.cacheonly:
+                log.debug("using cached .treeinfo %s", outfile)
+                self._treeinfo = Treeinfo(outfile)
+            else:
+                log.debug("fetching .treeinfo from repo '%s'", self.instrepoid)
+                if os.path.exists(outfile):
+                    os.remove(outfile)
+                fn = self.instrepo.grab.urlgrab('.treeinfo', outfile,
+                                                reget=None)
+                self._treeinfo = Treeinfo(fn)
+                log.debug(".treeinfo saved at %s", fn)
             self._treeinfo.checkvalues()
         return self._treeinfo
 
@@ -456,8 +435,6 @@ class UpgradeDownloader(yum.YumBase):
             initrd = initrdpath
         except TreeinfoError as e:
             raise YumBaseError(_("invalid data in .treeinfo: %s") % str(e))
-        except yum.Errors.YumGPGCheckError as e:
-            raise YumBaseError(_("could not verify GPG signature: %s") % str(e))
         except yum.URLGrabError as e:
             err = e.strerror
             if e.errno == 256:
