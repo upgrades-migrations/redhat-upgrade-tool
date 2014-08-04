@@ -56,3 +56,8 @@ mirrormanager = ''
 defaultkey = ''
 
 update_img_dir = '/etc/' + __package__ + '/update.img.d'
+
+# FIXME: there is probably a better way to do this than hardcoding it
+# This key id is used with RHEL-7.0 GA
+rhel_gpgkey_id = 'fd431d51-4ae0493b'
+rhel_gpgkey_path = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
