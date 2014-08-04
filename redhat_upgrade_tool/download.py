@@ -224,6 +224,12 @@ class UpgradeDownloader(yum.YumBase):
                     f.write("[redhat-upgrade-%s]\n" % repo.id)
                     f.write("name=Upgrade - %s\n" % repo.id)
                     f.write("enabled=0\n")
+                    if repo.gpgcheck:
+                        f.write("gpgcheck=1\n")
+                    else:
+                        f.write("gpgcheck=0\n")
+                    if repo.gpgkey:
+                        f.write("gpgkey=%s\n" % " ".join(repo.gpgkey))
                     if repo.mirrorlist:
                         f.write("mirrorlist=%s\n" % repo.mirrorlist)
                     elif repo.metalink:
