@@ -244,8 +244,13 @@ def misc_cleanup():
         log.info("removing %s", d)
         rm_rf(d)
 
-    # Un-disable the repo files
     repodir = '/etc/yum.repos.d'
+
+    log.info("removing repo files")
+    for repo in glob.glob(repodir + '/redhat-upgrade-*.repo'):
+        rm_rf(repo)
+
+    # Un-disable the repo files
     for repo in glob.glob(repodir + '/*.repo'):
         with open(repo, 'r') as repofile:
             repodata = repofile.read()
