@@ -17,7 +17,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, glob
+import os, glob, re
 from shutil import copy2
 
 from . import _
@@ -231,7 +231,9 @@ def disable_old_repos():
     for repo in glob.glob(repodir + '/*.repo'):
         with open(repo, 'r') as repofile:
             repodata = repofile.read()
-        disabled_data = repodata.replace('enabled=1', '# disabled by redhat-upgrade-tool\nenabled=0')
+        disabled_data = re.sub(r'enabled\s*=\s*1',
+                               '# disabled by redhat-upgrade-tool\nenabled=0',
+                               repodata)
         if disabled_data != repodata:
             with open(repo, 'w') as repofile:
                 repofile.write(disabled_data)
