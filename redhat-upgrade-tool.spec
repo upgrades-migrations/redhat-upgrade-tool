@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.25
+Version:        0.7.26
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Aug 15 2014 David Shea <dshea@redhat.com> 0.7.26-1
+- Fix the search for enabled repos to disable.
+  Related: rhbz#1075486
+
 * Mon Aug  4 2014 David Shea <dshea@redhat.com> 0.7.25-1
 - Add --instrepokey (wwoods)
   Related: rhbz#1115532
