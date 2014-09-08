@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.26
+Version:        0.7.27
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Sep  8 2014 David Shea <dshea@redhat.com> 0.7.27-1
+- Fix fedup.util.rlistdir
+  Related: rhbz#1138615
+- Run preupgrade scripts before setting up the upgrade
+  Resolves: rhbz#1138615
+
 * Fri Aug 15 2014 David Shea <dshea@redhat.com> 0.7.26-1
 - Fix the search for enabled repos to disable.
   Related: rhbz#1075486
