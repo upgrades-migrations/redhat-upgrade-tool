@@ -24,7 +24,7 @@ import os, sys, time, platform, shutil
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
-from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p
+from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
@@ -33,6 +33,7 @@ from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
 from redhat_upgrade_tool import textoutput as output
 from redhat_upgrade_tool import upgradeconf
 from redhat_upgrade_tool import rhel_gpgkey_path
+from redhat_upgrade_tool import preupgrade_script_path
 
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
@@ -107,6 +108,17 @@ def main(args):
     if args.clean:
         do_cleanup(args)
         return
+
+    # Run the preuprade scripts if present
+    if os.path.isdir(preupgrade_script_path):
+        scripts = sorted(rlistdir(preupgrade_script_path))
+        for s in scripts:
+            if os.access(s, os.X_OK):
+                try:
+                    check_call(s)
+                except CalledProcessError as e:
+                    print("%s exited with status %d, exiting" % (s, e.returncode))
+                    sys.exit(1)
 
     if args.device or args.iso:
         device_setup(args)

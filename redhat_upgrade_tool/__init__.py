@@ -61,3 +61,6 @@ update_img_dir = '/etc/' + __package__ + '/update.img.d'
 # This key id is used with RHEL-7.0 GA
 rhel_gpgkey_id = 'fd431d51-4ae0493b'
 rhel_gpgkey_path = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
+
+# Path for pre-upgrade scripts from preupgrade
+preupgrade_script_path = '/root/preupgrade/preupgrade-scripts'
