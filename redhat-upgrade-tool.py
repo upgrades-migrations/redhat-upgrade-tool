@@ -109,17 +109,6 @@ def main(args):
         do_cleanup(args)
         return
 
-    # Run the preuprade scripts if present
-    if os.path.isdir(preupgrade_script_path):
-        scripts = sorted(rlistdir(preupgrade_script_path))
-        for s in scripts:
-            if os.access(s, os.X_OK):
-                try:
-                    check_call(s)
-                except CalledProcessError as e:
-                    print("%s exited with status %d, exiting" % (s, e.returncode))
-                    sys.exit(1)
-
     if args.device or args.iso:
         device_setup(args)
 
@@ -270,6 +259,17 @@ def main(args):
 
     # Save the repo configuration
     f.save_repo_configs()
+
+    # Run the preuprade scripts if present
+    if os.path.isdir(preupgrade_script_path):
+        scripts = sorted(rlistdir(preupgrade_script_path))
+        for s in scripts:
+            if os.access(s, os.X_OK):
+                try:
+                    check_call(s)
+                except CalledProcessError as e:
+                    print("%s exited with status %d, exiting" % (s, e.returncode))
+                    sys.exit(1)
 
     if not args.skipbootloader:
         if args.skipkernel:
