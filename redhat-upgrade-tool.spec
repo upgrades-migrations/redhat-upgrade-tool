@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Sep 12 2014 David Shea <dshea@redhat.com> 0.7.29-1
+- Disable yum repos with no enabled= line
+  Resolves: rhbz#1130686
+
 * Tue Sep  8 2014 David Shea <dshea@redhat.com> 0.7.28-1
 - Execute preupgrade-scripts after storing RHEL-7 repos (phracek)
   Related: rhbz#1138615
