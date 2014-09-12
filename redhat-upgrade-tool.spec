@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.28
+Version:        0.7.29
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
