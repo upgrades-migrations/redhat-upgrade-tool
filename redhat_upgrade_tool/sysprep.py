@@ -34,6 +34,22 @@ log = logging.getLogger(__package__+".sysprep")
 
 upgrade_prep_dir = packagedir + "/upgrade-prep"
 
+# Override ConfigParser.write so we can add comments in the right place
+class YumRepoParser(ConfigParser):
+    # Use this as value to print a comment plus enabled=0
+    DISABLE = "REDHAT_UPGRADE_TOOL_DISABLE"
+
+    def write(self, fp):
+        for section in self.sections():
+            fp.write("[%s]\n" % section)
+            for (key, value) in self.items(section):
+                if key != "__name__":
+                    if value == self.DISABLE:
+                        fp.write("# disabled by redhat-upgrade-tool\nenabled = 0\n")
+                    else:
+                        fp.write("%s=%s\n" % (key, str(value).replace('\n', '\n\t')))
+            fp.write("\n")
+
 def setup_cleanup_post():
     '''Set a flag in upgrade.conf to be read by preupgrade-assistant,
        signalling it to cleanup old packages in the post scripts.'''
@@ -231,7 +247,7 @@ def disable_old_repos():
     repodir = '/etc/yum.repos.d'
 
     for repo in glob.glob(repodir + '/*.repo'):
-        parser = ConfigParser()
+        parser = YumRepoParser()
         parser.read(repo)
 
         repo_changed = False
@@ -243,7 +259,7 @@ def disable_old_repos():
                 enabled = '1'
 
             if enabled == '1':
-                parser.set(section, 'enabled', '0 # disabled by redhat-upgrade-tool')
+                parser.set(section, 'enabled', YumRepoParser.DISABLE)
                 repo_changed = True
 
         if repo_changed:
@@ -267,11 +283,7 @@ def misc_cleanup():
     for repo in glob.glob(repodir + '/*.repo'):
         with open(repo, 'r') as repofile:
             repodata = repofile.read()
-        # Look for both the < 0.7.29 format, which had a comment followed by the enabled
-        # line, and >=0.7.29, which puts the comment on the same line because that's way
-        # easier to do with ConfigParser.
         enabled_data = re.sub('# disabled by redhat-upgrade-tool\nenabled\\s*=\\s*0', 'enabled=1', repodata)
-        enabled_data = re.sub('enabled\\s*=\\s*0\\s*# disabled by redhat-upgrade-tool', 'enabled=1', enabled_data)
         if enabled_data != repodata:
             with open(repo, 'w') as repofile:
                 repofile.write(enabled_data)
