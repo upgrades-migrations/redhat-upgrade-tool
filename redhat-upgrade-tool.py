@@ -25,7 +25,7 @@ from subprocess import call, check_call, CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
 from redhat_upgrade_tool.util import rm_f, mkdir_p
-from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
+from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
@@ -327,9 +327,9 @@ if __name__ == '__main__':
         if e.message:
             message(_("Exiting on keyboard interrupt (%s)") % e.message)
         raise SystemExit(1)
-    except YumBaseError as e:
+    except (YumBaseError, URLGrabError) as e:
         print
-        if isinstance(e.value, list):
+        if hasattr(e, "value") and isinstance(e.value, list):
             err = e.value.pop(0)
             message(_("Downloading failed: %s") % err)
             for p in e.value:
