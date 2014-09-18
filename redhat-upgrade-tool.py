@@ -63,6 +63,7 @@ def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
     if disabled_repos:
         print _("No upgrade available for the following repos") + ": " + \
                 " ".join(disabled_repos)
+        print _("Check that the repo URLs are correct.")
         log.info("disabled repos: " + " ".join(disabled_repos))
     return f
 
