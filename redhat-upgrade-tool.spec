@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.30
+Version:        0.7.31
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,14 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Sep 19 2014 David Shea <dshea@redhat.com> 0.7.31-1
+- Fix ValueError with --addrepo/--repo REPOID (wwoods)
+  Related: rhbz#1084985
+- Add a message about invalid repo URLs
+  Resolves: rhbz#1084985
+- Catch exceptions from early treeinfo parsing
+  Resolves: (#1076120)
+
 * Wed Sep 17 2014 David Shea <dshea@redhat.com> 0.7.30-1
 - Fix the enabled line on disabled yum repos
   Related: rhbz#1130686
