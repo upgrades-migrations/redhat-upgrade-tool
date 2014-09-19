@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.31
+Version:        0.7.32
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Sep 19 2014 David Shea <dshea@redhat.com> 0.7.32-1
+- Fix the URLGrabError import
+  Related: rhbz#1076120
+
 * Fri Sep 19 2014 David Shea <dshea@redhat.com> 0.7.31-1
 - Fix ValueError with --addrepo/--repo REPOID (wwoods)
   Related: rhbz#1084985
