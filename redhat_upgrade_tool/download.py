@@ -27,7 +27,7 @@ from .conf import Config
 from yum.Errors import YumBaseError
 from yum.parser import varReplace
 from yum.constants import TS_REMOVE_STATES
-from yum.urlgrabber.grabber import URLGrabError
+from urlgrabber.grabber import URLGrabError
 from yum.misc import gpgme
 from gzip import GzipFile
 from rhsm.certificate import create_from_pem
