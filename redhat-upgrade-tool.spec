@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.6
+Version:        0.9.1
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          2
@@ -69,6 +69,50 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Sep 19 2014 David Shea <dshea@redhat.com> - 2:0.9.1-1
+- Fix the kernel and initrd names.
+  Resolves: rhbz#1084143
+- Change the python-devel BuildRequires to python-libs
+  Related: rhbz#1084143
+- Check for preupgrade-assistant risks
+  Resolves: rhbz#1084145
+- Don't display package problems covered by preupgrade-assistant
+  Related: rhbz#1084145
+- Revise the preupgrade HIGH risk message.
+  Related: rhbz#1084145
+- Require --instrepo with --network.
+  Resolves: rhbz#1084151
+- Call preupgrade-assistant API directly (phracek)
+  Related: rhbz#1084145
+- Revise how preupgrade issues are printed
+  Related: rhbz#1084145
+- Save the repo config files to /var/tmp/system-upgrade/yum.repos.d
+  Resolves: rhbz#1084164
+- Added a check to prevent cross-variant upgrades.
+  Related: rhbz#1084145
+- Move the repo files to /etc/yum.repos.d
+  Related: rhbz#1084164
+- Add an option --cleanup-post to cleanup packages in post scripts.
+  Resolves: rhbz#1084155
+- Clear upgrade.conf before starting
+  Related: rhbz#1100391
+- Always create the upgrade.conf directory
+  Related: rhbz#1084155
+- Copy upgrade.conf to /root/preupgrade
+  Related: rhbz#1084155
+- Fix ValueError with --addrepo/--repo REPOID (wwoods)
+  Related: rhbz#1085023
+- Add a message about invalid repo URLs
+  Resolves: rhbz#1085023
+- Catch exceptions from early treeinfo parsing
+  Resolves: rhbz#1084156
+- Skip preupgrade-assistant checks if preupgrade is not available
+  Related: rhbz#1084145
+- Fix the URLGrabError import
+  Related: rhbz#1084156
+- treat --network VERSION as a float, not int (wwoods)
+  Related: rhbz#1084151
+
 * Thu Jan 23 2014 David Shea <dshea@redhat.com> - 2:0.7.6-1
 - Remove the URL from the Source0 line (dshea)
   Resolves: rhbz#1056730
