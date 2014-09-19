@@ -36,8 +36,13 @@ from redhat_upgrade_tool import upgradeconf
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
 
-from preup import xccdf
-from preup import settings
+try:
+    from preup import xccdf
+    from preup import settings
+    preupgrade_available = True
+except ImportError:
+    preupgrade_available = False
+
 
 import logging
 log = logging.getLogger("redhat-upgrade-tool")
@@ -99,7 +104,10 @@ def reboot():
     call(['systemctl', 'reboot'])
 
 def get_preupgrade_result_name():
-    return os.path.join(settings.result_dir, settings.xml_result_name)
+    if preupgrade_available:
+        return os.path.join(settings.result_dir, settings.xml_result_name)
+    else:
+        return None
 
 def main(args):
     global major_upgrade
@@ -132,7 +140,7 @@ def main(args):
         if args.force:
             log.info("Skipping check for preupgrade-assisant")
 
-        if not args.force:
+        if not args.force and preupgrade_available:
             # Run preupg --riskcheck
             returncode = xccdf.check_inplace_risk(get_preupgrade_result_name(), 0)
             if int(returncode) == 0:
