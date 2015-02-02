@@ -26,7 +26,7 @@ from ConfigParser import NoOptionError
 
 from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
-from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos
+from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -261,6 +261,20 @@ def main(args):
     # Save the repo configuration
     f.save_repo_configs()
 
+    #dump all configuration to upgrade.conf, other tools need to know
+    #TODO:some items are structured, would be nice to unpack them
+    with Config(upgradeconf) as conf:
+	argsdict = args.__dict__
+	for arg in argsdict:
+	    conf.set("config", arg.__str__(), argsdict[arg].__str__())
+
+    # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
+    # Copy upgrade.conf to /root/preupgrade so that it won't be removed
+    # before the postupgrade scripts are run.
+    mkdir_p('/root/preupgrade')
+    shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
+
+
     # Run the preuprade scripts if present
     if os.path.isdir(preupgrade_script_path):
         scripts = sorted(rlistdir(preupgrade_script_path))
@@ -288,12 +302,6 @@ def main(args):
 
     if args.cleanup_post:
         setup_cleanup_post()
-
-    # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
-    # Copy upgrade.conf to /root/preupgrade so that it won't be removed
-    # before the postupgrade scripts are run.
-    mkdir_p('/root/preupgrade')
-    shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
 
     if args.reboot:
         reboot()
