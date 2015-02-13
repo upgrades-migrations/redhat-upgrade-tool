@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.33
+Version:        0.7.34
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Feb 13 2015 David Shea <dshea@redhat.com> 0.7.34-1
+- Run setup_cleanup_post earlier (fkluknav)
+  Related: rhbz#1187024
+
 * Mon Feb  2 2015 David Shea <dshea@redhat.com> 0.7.33-1
 - Write all command-line options to upgrade.conf (fkluknav)
   Resolves: rhbz#1187024
