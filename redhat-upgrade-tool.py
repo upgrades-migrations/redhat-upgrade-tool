@@ -268,6 +268,9 @@ def main(args):
 	for arg in argsdict:
 	    conf.set("config", arg.__str__(), argsdict[arg].__str__())
 
+    if args.cleanup_post:
+        setup_cleanup_post()
+
     # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
     # Copy upgrade.conf to /root/preupgrade so that it won't be removed
     # before the postupgrade scripts are run.
@@ -299,9 +302,6 @@ def main(args):
 
     if args.iso:
         media.umount(args.device.mnt)
-
-    if args.cleanup_post:
-        setup_cleanup_post()
 
     if args.reboot:
         reboot()
