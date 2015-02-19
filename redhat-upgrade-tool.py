@@ -151,7 +151,11 @@ def main(args):
 
                 xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
 
-                answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                try:
+                    answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                except EOFError:
+                    answer = ''
+
                 # TRANSLATORS: y for yes
                 if answer.lower() != _('y'):
                     raise SystemExit(1)
