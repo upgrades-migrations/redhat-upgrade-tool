@@ -129,7 +129,7 @@ class UpgradeDownloader(yum.YumBase):
         pluginpath = self.plugins.searchpath
         log.info("enabled plugins: %s", self.plugins._plugins.keys())
 
-    def add_repo(self, repoid, baseurls=[], mirrorlist=None, **kwargs):
+    def add_repo(self, repoid, baseurls=[], mirrorlist=None, noverifyssl=False, **kwargs):
         '''like add_enable_repo, but doesn't do initial repo setup and doesn't
         make unnecessary changes'''
         r = yum.yumRepo.YumRepository(repoid)
@@ -141,12 +141,13 @@ class UpgradeDownloader(yum.YumBase):
         r.failure_obj = raise_exception
         r.mirror_failure_obj = raise_exception
         r.baseurl = [varReplace(u, self.conf.yumvar) for u in baseurls if u]
+        r.sslverify = not(noverifyssl)
         if mirrorlist:
             r.mirrorlist = varReplace(mirrorlist, self.conf.yumvar)
         self._repos.add(r)
         self._repos.enableRepo(repoid)
 
-    def setup_repos(self, callback=None, progressbar=None, repos=[]):
+    def setup_repos(self, callback=None, progressbar=None, repos=[], noverifyssl=False):
         '''Return a list of repos that had problems setting up.'''
         # These will set up progressbar and callback when we actually do setup
         self.prerepoconf.progressbar = progressbar
@@ -179,9 +180,9 @@ class UpgradeDownloader(yum.YumBase):
             elif action == 'add':
                 (repoid, url) = repo.split('=',1)
                 if url[0] == '@':
-                    self.add_repo(repoid, mirrorlist=url[1:])
+                    self.add_repo(repoid, mirrorlist=url[1:], noverifyssl=noverifyssl)
                 else:
-                    self.add_repo(repoid, baseurls=[url])
+                    self.add_repo(repoid, baseurls=[url], noverifyssl=noverifyssl)
                 if self.conf.proxy:
                     repo = self.repos.getRepo(repoid)
                     repo.proxy = self.conf.proxy
