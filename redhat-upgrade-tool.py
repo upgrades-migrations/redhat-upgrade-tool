@@ -26,8 +26,8 @@ from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
 from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
-from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc
-from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos
+from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
+from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -67,6 +67,7 @@ def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
     if disabled_repos:
         print _("No upgrade available for the following repos") + ": " + \
                 " ".join(disabled_repos)
+        print _("Check that the repo URLs are correct.")
         log.info("disabled repos: " + " ".join(disabled_repos))
     return f
 
@@ -174,7 +175,11 @@ def main(args):
 
                 xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
 
-                answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                try:
+                    answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                except EOFError:
+                    answer = ''
+
                 # TRANSLATORS: y for yes
                 if answer.lower() != _('y'):
                     raise SystemExit(1)
@@ -284,6 +289,23 @@ def main(args):
     # Save the repo configuration
     f.save_repo_configs()
 
+    #dump all configuration to upgrade.conf, other tools need to know
+    #TODO:some items are structured, would be nice to unpack them
+    with Config(upgradeconf) as conf:
+	argsdict = args.__dict__
+	for arg in argsdict:
+	    conf.set("config", arg.__str__(), argsdict[arg].__str__())
+
+    if args.cleanup_post:
+        setup_cleanup_post()
+
+    # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
+    # Copy upgrade.conf to /root/preupgrade so that it won't be removed
+    # before the postupgrade scripts are run.
+    mkdir_p('/root/preupgrade')
+    shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
+
+
     # Run the preuprade scripts if present
     if os.path.isdir(preupgrade_script_path):
         scripts = sorted(rlistdir(preupgrade_script_path))
@@ -308,15 +330,6 @@ def main(args):
 
     if args.iso:
         media.umount(args.device.mnt)
-
-    if args.cleanup_post:
-        setup_cleanup_post()
-
-    # Workaround the redhat-upgrade-dracut upgrade-post hook order problem
-    # Copy upgrade.conf to /root/preupgrade so that it won't be removed
-    # before the postupgrade scripts are run.
-    mkdir_p('/root/preupgrade')
-    shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
 
     if args.reboot:
         reboot()
@@ -380,9 +393,9 @@ if __name__ == '__main__':
         if e.message:
             message(_("Exiting on keyboard interrupt (%s)") % e.message)
         raise SystemExit(1)
-    except YumBaseError as e:
+    except (YumBaseError, URLGrabError) as e:
         print
-        if isinstance(e.value, list):
+        if hasattr(e, "value") and isinstance(e.value, list):
             err = e.value.pop(0)
             message(_("Downloading failed: %s") % err)
             for p in e.value:

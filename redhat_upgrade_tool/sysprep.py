@@ -19,6 +19,7 @@
 
 import os, glob, re
 from shutil import copy2
+from ConfigParser import ConfigParser, NoOptionError
 
 from . import _
 from . import cachedir, packagedir, packagelist, update_img_dir
@@ -32,6 +33,22 @@ import logging
 log = logging.getLogger(__package__+".sysprep")
 
 upgrade_prep_dir = packagedir + "/upgrade-prep"
+
+# Override ConfigParser.write so we can add comments in the right place
+class YumRepoParser(ConfigParser):
+    # Use this as value to print a comment plus enabled=0
+    DISABLE = "REDHAT_UPGRADE_TOOL_DISABLE"
+
+    def write(self, fp):
+        for section in self.sections():
+            fp.write("[%s]\n" % section)
+            for (key, value) in self.items(section):
+                if key != "__name__":
+                    if value == self.DISABLE:
+                        fp.write("# disabled by redhat-upgrade-tool\nenabled = 0\n")
+                    else:
+                        fp.write("%s=%s\n" % (key, str(value).replace('\n', '\n\t')))
+            fp.write("\n")
 
 def setup_cleanup_post():
     '''Set a flag in upgrade.conf to be read by preupgrade-assistant,
@@ -228,16 +245,26 @@ def remove_cache():
 
 def disable_old_repos():
     repodir = '/etc/yum.repos.d'
-    for repo in glob.glob(repodir + '/*.repo'):
-        with open(repo, 'r') as repofile:
-            repodata = repofile.read()
-        disabled_data = re.sub(r'enabled\s*=\s*1',
-                               '# disabled by redhat-upgrade-tool\nenabled=0',
-                               repodata)
-        if disabled_data != repodata:
-            with open(repo, 'w') as repofile:
-                repofile.write(disabled_data)
 
+    for repo in glob.glob(repodir + '/*.repo'):
+        parser = YumRepoParser()
+        parser.read(repo)
+
+        repo_changed = False
+        for section in parser.sections():
+            enabled = '0'
+            try:
+                enabled = parser.get(section, 'enabled')
+            except NoOptionError:
+                enabled = '1'
+
+            if enabled == '1':
+                parser.set(section, 'enabled', YumRepoParser.DISABLE)
+                repo_changed = True
+
+        if repo_changed:
+            with open(repo, 'w') as repofile:
+                parser.write(repofile)
 
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
@@ -256,7 +283,7 @@ def misc_cleanup():
     for repo in glob.glob(repodir + '/*.repo'):
         with open(repo, 'r') as repofile:
             repodata = repofile.read()
-        enabled_data = repodata.replace('# disabled by redhat-upgrade-tool\nenabled=0', 'enabled=1')
+        enabled_data = re.sub('# disabled by redhat-upgrade-tool\nenabled\\s*=\\s*0', 'enabled=1', repodata)
         if enabled_data != repodata:
             with open(repo, 'w') as repofile:
                 repofile.write(enabled_data)

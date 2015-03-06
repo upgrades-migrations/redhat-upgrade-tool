@@ -96,8 +96,6 @@ def parse_args(gui=False):
         dest='repos', type=str, help=_('enable one or more repos (wildcards allowed)'))
     net.add_option('--disablerepo', metavar='REPOID', action='callback', callback=repoaction,
         dest='repos', type=str, help=_('disable one or more repos (wildcards allowed)'))
-    net.add_option('--repourl', metavar='REPOID=URL', action='callback', callback=repoaction,
-        dest='repos', type=str, help=optparse.SUPPRESS_HELP)
     net.add_option('--addrepo', metavar='REPOID=[@]URL',
         action='callback', callback=repoaction, dest='repos', type=str,
         help=_('add the repo at URL (@URL for mirrorlist)'))
@@ -150,8 +148,12 @@ def repoaction(option, opt_str, value, parser, *args, **kwargs):
         action = 'enable'
     elif opt_str.startswith('--disable'):
         action = 'disable'
-    elif opt_str.startswith('--repo') or opt_str.startswith('--addrepo'):
+    elif opt_str.startswith('--addrepo'):
         action = 'add'
+        # validate the argument
+        repoid, eq, url = value.partition("=")
+        if not (repoid and eq and "://" in url):
+            raise optparse.OptionValueError(_("value should be REPOID=[@]URL"))
     parser.values.repos.append((action, value))
 
 # check the argument to '--device' to see if it refers to install media
@@ -271,7 +273,7 @@ def do_cleanup(args):
     misc_cleanup()
 
 def device_setup(args):
-    # treat --device like --repo REPO=file://$MOUNTPOINT
+    # treat --device like --addrepo REPO=file://$MOUNTPOINT
     if args.device:
         args.repos.append(('add', 'upgradedevice=file://%s' % args.device.mnt))
         args.instrepo = 'upgradedevice'

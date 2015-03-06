@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.27
+Version:        0.7.34
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,38 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Feb 13 2015 David Shea <dshea@redhat.com> 0.7.34-1
+- Run setup_cleanup_post earlier (fkluknav)
+  Related: rhbz#1187024
+
+* Mon Feb  2 2015 David Shea <dshea@redhat.com> 0.7.33-1
+- Write all command-line options to upgrade.conf (fkluknav)
+  Resolves: rhbz#1187024
+
+* Fri Sep 19 2014 David Shea <dshea@redhat.com> 0.7.32-1
+- Fix the URLGrabError import
+  Related: rhbz#1076120
+
+* Fri Sep 19 2014 David Shea <dshea@redhat.com> 0.7.31-1
+- Fix ValueError with --addrepo/--repo REPOID (wwoods)
+  Related: rhbz#1084985
+- Add a message about invalid repo URLs
+  Resolves: rhbz#1084985
+- Catch exceptions from early treeinfo parsing
+  Resolves: (#1076120)
+
+* Wed Sep 17 2014 David Shea <dshea@redhat.com> 0.7.30-1
+- Fix the enabled line on disabled yum repos
+  Related: rhbz#1130686
+
+* Fri Sep 12 2014 David Shea <dshea@redhat.com> 0.7.29-1
+- Disable yum repos with no enabled= line
+  Resolves: rhbz#1130686
+
+* Tue Sep  8 2014 David Shea <dshea@redhat.com> 0.7.28-1
+- Execute preupgrade-scripts after storing RHEL-7 repos (phracek)
+  Related: rhbz#1138615
+
 * Mon Sep  8 2014 David Shea <dshea@redhat.com> 0.7.27-1
 - Fix fedup.util.rlistdir
   Related: rhbz#1138615
