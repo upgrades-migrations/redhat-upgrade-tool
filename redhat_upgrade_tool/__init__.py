@@ -32,6 +32,7 @@ Your pal,
 '''
 
 import logging
+import os
 from .logutils import NullHandler
 log = logging.getLogger(__package__)
 log.addHandler(NullHandler())
@@ -47,15 +48,15 @@ initrdpath = '/boot/initramfs-%s.img' % kernel_id
 
 cachedir = '/var/tmp/system-upgrade'
 packagedir = '/var/lib/system-upgrade'
-packagelist = packagedir + '/package.list'
-upgradeconf = packagedir + '/upgrade.conf'
+packagelist = os.path.join(packagedir, 'package.list')
+upgradeconf = os.path.join(packagedir, 'upgrade.conf')
 upgradelink = '/system-upgrade'
 upgraderoot = '/system-upgrade-root'
 
 mirrormanager = ''
 defaultkey = ''
 
-update_img_dir = '/etc/' + __package__ + '/update.img.d'
+update_img_dir = os.path.join('/etc', __package__, 'update.img.d')
 
 # FIXME: there is probably a better way to do this than hardcoding it
 # This key id is used with RHEL-7.0 GA
@@ -63,4 +64,6 @@ rhel_gpgkey_id = 'fd431d51-4ae0493b'
 rhel_gpgkey_path = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
 
 # Path for pre-upgrade scripts from preupgrade
-preupgrade_script_path = '/root/preupgrade/preupgrade-scripts'
+preupgrade_dir = "/root/preupgrade"
+preupgrade_script_path = os.path.join(preupgrade_dir, 'preupgrade-scripts')
+release_version_file = os.path.join(preupgrade_dir, preupgrade_script_path, 'release_version')
