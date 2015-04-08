@@ -76,7 +76,7 @@ def download_packages(f):
     updates = f.build_update_transaction(callback=output.DepsolveCallback(f))
     # check for empty upgrade transaction
     if not updates:
-        print _('Your system is already upgraded!')
+        print _('No upgrade found, please check the repository specified is correct.')
         print _('Finished. Nothing to do.')
         raise SystemExit(0)
     # print dependency problems before we start the upgrade
