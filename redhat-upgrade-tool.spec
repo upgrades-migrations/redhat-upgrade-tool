@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.35
+Version:        0.7.36
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Apr  8 2015 David Shea <dshea@redhat.com> 0.7.36-1
+- Add an option to disable SSL certificate verification
+  Resolves: rhbz#1169969
+- Change the message shown when no upgrade is found.
+  Resolves: rhbz#1199927
+
 * Wed Apr  8 2015 David Shea <dshea@redhat.com> 0.7.35-1
 - Handle EOFError in raw_input
   Resolves: rhbz#1106485
