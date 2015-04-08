@@ -20,7 +20,8 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, sys, time, platform, shutil
+import os
+import sys, time, platform, shutil
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
@@ -34,6 +35,7 @@ from redhat_upgrade_tool import textoutput as output
 from redhat_upgrade_tool import upgradeconf
 from redhat_upgrade_tool import rhel_gpgkey_path
 from redhat_upgrade_tool import preupgrade_script_path
+from redhat_upgrade_tool import release_version_file
 
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
@@ -103,6 +105,25 @@ def reboot():
 def get_preupgrade_result_name():
     return os.path.join(settings.result_dir, settings.xml_result_name)
 
+def check_release_version_file():
+    if not os.path.exists(release_version_file):
+        print _("File for checking if upgrade path is possible doesn't exist.")
+        raise SystemExit(1)
+    try:
+        with open(release_version_file) as release_file:
+            release = release_file.readlines()
+        try:
+            rel = release[1].strip()
+            if rel != args.network:
+                print _("You are trying to upgrade on system %s which is not allowed." % args.network)
+                print _("Preupgrade-assistant assess the system for upgrade to %s version" % rel)
+                raise SystemExit(1)
+        except KeyError:
+            print _("Release file doesn't contain proper versions.")
+            raise SystemExit(1)
+    except (IOError, OSError):
+        raise SystemExit(1)
+
 def main(args):
     global major_upgrade
 
@@ -125,6 +146,9 @@ def main(args):
     # Compare the first part of the version number in the treeinfo with the
     # first part of the version number of the system to determine if this is a
     # major version upgrade
+    if not args.force and args.network:
+        check_release_version_file()
+
     if f.treeinfo.get('general', 'version').split('.')[0] != \
             platform.linux_distribution()[1].split('.')[0]:
 
