@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.34
+Version:        0.7.35
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,14 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Apr  8 2015 David Shea <dshea@redhat.com> 0.7.35-1
+- Handle EOFError in raw_input
+  Resolves: rhbz#1106485
+- Check proper upgrade target version (phracek)
+  Resolves: rhbz#1199087
+- Add a message on check_release_version_file failures
+  Related: rhbz#1199087
+
 * Fri Feb 13 2015 David Shea <dshea@redhat.com> 0.7.34-1
 - Run setup_cleanup_post earlier (fkluknav)
   Related: rhbz#1187024
