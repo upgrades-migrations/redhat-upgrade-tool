@@ -121,7 +121,8 @@ def check_release_version_file():
         except KeyError:
             print _("Release file doesn't contain proper versions.")
             raise SystemExit(1)
-    except (IOError, OSError):
+    except (IOError, OSError) as e:
+        print _("Unable to read upgrade path file: %s") % e
         raise SystemExit(1)
 
 def main(args):
