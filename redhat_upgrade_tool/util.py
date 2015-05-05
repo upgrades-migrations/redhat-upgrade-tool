@@ -127,6 +127,8 @@ def hrsize(size, si=False, use_ib=False):
 def check_grub_conf_file():
     '''function checks if all boot parameters are fine'''
     content = None
+    if not os.path.exists(grub_conf_file):
+        return
     with open(grub_conf_file) as f:
         content = f.read()
     if not content:
