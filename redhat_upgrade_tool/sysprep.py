@@ -312,7 +312,7 @@ def upgrade_boot_args():
                         'KEYMAP': 'vconsole.keymap', 'KEYTABLE': 'vconsole.keymap',
                         'SYSFONT': 'vconsole.font', 'CONTRANS': 'vconsole.font.map',
                         'UNIMAP': 'vconsole.font.unimap', 'UNICODE': 'vconsole.unicode',
-                        'EXT_KEYMAP': 'vconsole.keymap.ext'}
+                        'EXT_KEYMAP': 'vconsole.keymap.ext', 'LANG': 'rd.locale.LANG'}
     no_options = {'rd_NO_DM': 'rd.dm=0', 'rd_NO_DM': 'rd.dm=0', 'rd_NO_LVM': 'rd.lvm=0',
                   'rd_NO_MD': 'rd.md=0', 'rd_NO_LUKS': 'rd.luks=0', 'rd_NO_CRYPTTAB': 'rd.luks.crypttab=0',
                   'rd_NO_PLYMOUTH': 'rd.plymouth=0', 'rd_NO_MDADMCONF': 'rd.md.conf=0',
