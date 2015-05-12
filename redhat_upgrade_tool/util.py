@@ -21,6 +21,7 @@ import os, struct
 from shutil import rmtree
 from subprocess import Popen, CalledProcessError, PIPE, STDOUT
 from pipes import quote as shellquote
+from redhat_upgrade_tool import grub_conf_file
 
 import logging
 log = logging.getLogger(__package__+".util")
@@ -121,3 +122,53 @@ def hrsize(size, si=False, use_ib=False):
                 return "%u%s%s" % (int(size)+1, p, suffix)
             else:
                 return "%.1f%s%s" % (size, p, suffix)
+
+
+def check_grub_conf_file():
+    '''function checks if all boot parameters are fine'''
+    content = None
+    if not os.path.exists(grub_conf_file):
+        return
+    with open(grub_conf_file) as f:
+        content = f.read()
+    if not content:
+        return
+    replaced_options = {'rdbreak': 'rd.break', 'rd_DASD_MOD': 'rd.dasd',
+                        'rdinitdebug': 'rd.debug', 'rdnetdebug': 'rd.debug',
+                        'rdblacklist': 'rd.driver.blacklist', 'rdinsmodpost': 'rd.driver.post',
+                        'rdloaddriver': 'rd.driver.pre', 'rdinfo': 'rd.info', 'check': 'rd.live.check',
+                        'rdlivedebug': 'rd.live.debug', 'live_dir': 'rd.live.dir',
+                        'liveimg': 'rd.live.image', 'overlay': 'rd.live.overlay',
+                        'readonly_overlay': 'rd.live.overlay.readonly', 'reset_overlay': 'rd.live.overlay.reset',
+                        'live_ram': 'rd.live.ram', 'rdshell': 'rd.shell', 'rd_NO_SPLASH': 'rd.splash',
+                        'rdudevdebug': 'rd.udev.debug', 'rdudevinfo': 'rd.udev.info',
+                        'KEYMAP': 'vconsole.keymap', 'KEYTABLE': 'vconsole.keymap',
+                        'SYSFONT': 'vconsole.font', 'CONTRANS': 'vconsole.font.map',
+                        'UNIMAP': 'vconsole.font.unimap', 'UNICODE': 'vconsole.unicode',
+                        'EXT_KEYMAP': 'vconsole.keymap.ext'}
+    no_options = {'rd_NO_DM': 'rd.dm=0', 'rd_NO_DM': 'rd.dm=0', 'rd_NO_LVM': 'rd.lvm=0',
+                  'rd_NO_MD': 'rd.md=0', 'rd_NO_LUKS': 'rd.luks=0', 'rd_NO_CRYPTTAB': 'rd.luks.crypttab=0',
+                  'rd_NO_PLYMOUTH': 'rd.plymouth=0', 'rd_NO_MDADMCONF': 'rd.md.conf=0',
+                  'rd_NO_LVMCONF': 'rd.lvm.conf', 'rd_NO_MDIMSM': 'rd.md.imsm=0', 'rd_NO_MULTIPATH': 'rd.multipath=0',
+                  'rd_NO_ZFCPCONF': 'rd.zfcp.conf=0', 'rd_NO_FSTAB': 'rd.fstab=0',
+                  'iscsi_firmware': 'rd.iscsi.firmware=0'}
+    translate_options = ['rd_NFS_DOMAIN', 'rd_LVM_SNAPHOST', 'rd_LVM_SNAPSIZE', 'rd_LVM_VG',
+                         'rd_LUKS_KEYPATH', 'rd_LUKS_UUID', 'rd_LVM_LV', 'rd_retry',
+                         'rd_ZNET', 'rd_ZFCP', 'rd_CCW', 'rd_DM_UUID', 'rd_MD_UUID',
+                         'rd_LUKS_KEYDEV_UUID',
+                         ]
+    iscsi_options = ['iscsi_initiator', 'iscsi_target_name', 'iscsi_target_ip', 'iscsi_target_port',
+                     'iscsi_target_group', 'iscsi_username',
+                     'iscsi_password', 'iscsi_in_username', 'iscsi_in_password']
+    for key, value in replaced_options.iteritems():
+        content = content.replace(key, value)
+    for key, value in no_options.iteritems():
+        content = content.replace(key, value)
+    for translate in translate_options:
+        content = content.replace(translate, translate.replace('_', '.').lower())
+
+    for iscsi in iscsi_options:
+        content = content.replace(iscsi, 'rd.' + iscsi.replace('_', '.'))
+
+    with open(grub_conf_file, mode='w') as f:
+        f.write(content)

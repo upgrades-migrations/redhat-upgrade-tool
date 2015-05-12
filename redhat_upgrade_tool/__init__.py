@@ -67,3 +67,4 @@ rhel_gpgkey_path = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release'
 preupgrade_dir = "/root/preupgrade"
 preupgrade_script_path = os.path.join(preupgrade_dir, 'preupgrade-scripts')
 release_version_file = os.path.join(preupgrade_dir, preupgrade_script_path, 'release_version')
+grub_conf_file = "/boot/grub/grub.conf"
