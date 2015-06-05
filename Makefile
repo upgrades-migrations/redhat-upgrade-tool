@@ -1,5 +1,5 @@
 PYTHON=python
-VERSION=0.9.1
+VERSION=0.9.2
 
 all: build
 

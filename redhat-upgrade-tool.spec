@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.9.1
+Version:        0.9.2
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          2
@@ -69,6 +69,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Fri Jun  5 2015 David Shea <dshea@redhat.com> - 2:0.9.2-1
+- Add --instrepokey
+  Related: rhbz#1201822
+- Automatically add the GPG key to Red Hat repos.
+  Resolves: rhbz#1201822
+- Revert "fetch/verify .treeinfo.signed if gpgcheck is on"
+  Related: rhbz#1201822
+- Write GPG information to the yum repo files
+  Related: rhbz#1201822
+
 * Fri Sep 19 2014 David Shea <dshea@redhat.com> - 2:0.9.1-1
 - Fix the kernel and initrd names.
   Resolves: rhbz#1084143
