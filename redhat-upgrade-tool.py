@@ -394,8 +394,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt as e:
         print
         log.info("exiting on keyboard interrupt")
-        if e.message:
-            message(_("Exiting on keyboard interrupt (%s)") % e.message)
+        message(_("Exiting on keyboard interrupt"))
         raise SystemExit(1)
     except (YumBaseError, URLGrabError) as e:
         print
