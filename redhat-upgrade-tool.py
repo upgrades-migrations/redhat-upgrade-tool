@@ -21,7 +21,7 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os
-import sys, time, platform, shutil
+import sys, time, platform, shutil, signal
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
@@ -178,10 +178,31 @@ def main(args):
 
                 xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
 
-                try:
-                    answer = raw_input(_("Continue with the upgrade [Y/N]? "))
-                except EOFError:
-                    answer = ''
+                # Python 2.6 raises EOFError if raw_input receives a SIGWINCH.
+                # Try to tell the difference between that and a real EOF.
+
+                global sigwinch
+                sigwinch = False
+                def handle_sigwinch(signum, frame):
+                    global sigwinch
+                    sigwinch = True
+                orig_handler = signal.signal(signal.SIGWINCH, handle_sigwinch)
+
+                while True:
+                    try:
+                        sigwinch = False
+                        answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                        break
+                    except EOFError:
+                        if sigwinch:
+                            # Not a real EOF, try again
+                            print
+                            continue
+                        else:
+                            # Real EOF, exit
+                            answer = ''
+                            break
+                signal.signal(signal.SIGWINCH, orig_handler)
 
                 # TRANSLATORS: y for yes
                 if answer.lower() != _('y'):
