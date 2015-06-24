@@ -23,6 +23,9 @@ from os.path import exists, join, realpath
 from .util import check_output, call, STDOUT, CalledProcessError
 from tempfile import mkdtemp
 
+import logging
+log = logging.getLogger(__package__+".media")
+
 def check_call(cmd, stderr=STDOUT, *args, **kwargs):
     # Use stderr=STDOUT so CalledProcessError has mount output in e.output
     check_output(cmd, stderr=stderr, *args, **kwargs)
