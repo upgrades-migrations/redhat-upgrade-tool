@@ -33,6 +33,7 @@ import logging
 log = logging.getLogger(__package__+".sysprep")
 
 upgrade_prep_dir = packagedir + "/upgrade-prep"
+repodir = '/etc/yum.repos.d'
 
 # Override ConfigParser.write so we can add comments in the right place
 class YumRepoParser(ConfigParser):
@@ -244,8 +245,6 @@ def remove_cache():
         rm_rf(d)
 
 def disable_old_repos():
-    repodir = '/etc/yum.repos.d'
-
     for repo in glob.glob(repodir + '/*.repo'):
         parser = YumRepoParser()
         parser.read(repo)
@@ -272,8 +271,6 @@ def misc_cleanup():
     for d in (upgraderoot, upgrade_prep_dir):
         log.info("removing %s", d)
         rm_rf(d)
-
-    repodir = '/etc/yum.repos.d'
 
     log.info("removing repo files")
     for repo in glob.glob(repodir + '/redhat-upgrade-*.repo'):
@@ -367,3 +364,15 @@ def upgrade_boot_args():
         '--update', kernelver(kernel)])
     check_call(['new-kernel-pkg', '--kernel-args', ' '.join(new_args),
         '--update', kernelver(kernel)])
+
+def modify_repos(args):
+    """Rewrite the upgrade or iso repo configs for the post-reboot mount paths"""
+    if args.device or args.iso:
+        mountpath = os.path.join(upgradelink, "media")
+        repopath = os.path.join(repodir, 'redhat-upgrade-%s.repo' % args.instrepo)
+        parser = YumRepoParser()
+        parser.read(repopath)
+        parser.set('redhat-upgrade-%s' % args.instrepo, 'baseurl', 'file://%s' % mountpath)
+
+        with open(repopath, 'w') as repofile:
+            parser.write(repofile)

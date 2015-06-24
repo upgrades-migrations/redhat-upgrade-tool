@@ -28,6 +28,7 @@ from ConfigParser import NoOptionError
 from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config, upgrade_boot_args
+from redhat_upgrade_tool.sysprep import modify_repos
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -349,6 +350,9 @@ def main(args):
             initrd = initrdpath
         upgrade_boot_args()
         prep_boot(kernel, initrd)
+
+    # Replace temporary media paths
+    modify_repos(args)
 
     if args.device:
         setup_media_mount(args.device, args.iso)
