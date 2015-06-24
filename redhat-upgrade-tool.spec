@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.37
+Version:        0.7.38
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,16 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Jun 24 2015 David Shea <dshea@redhat.com> 0.7.38-1
+- Remove the KeyboardInterruptMessage
+- Retry raw_input on SIGWINCH
+  Resolves: rhbz#1106485
+- Do not use losetup for the ISO file name
+  Related: rhbz#1054048
+- Fix logging in media.py
+- Modify yum repo mountpoints before reboot.\
+  Resolves: rhbz#1225092
+
 * Tue May 12 2015 David Shea <dshea@redhat.com> 0.7.37-1
 - Convert bootloader arguments before upgrade (phracek)
   Resolves: rhbz#1081047
