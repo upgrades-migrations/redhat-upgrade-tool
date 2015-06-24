@@ -351,7 +351,7 @@ def main(args):
         prep_boot(kernel, initrd)
 
     if args.device:
-        setup_media_mount(args.device)
+        setup_media_mount(args.device, args.iso)
 
     if args.iso:
         media.umount(args.device.mnt)

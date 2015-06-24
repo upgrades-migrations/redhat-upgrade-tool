@@ -19,7 +19,7 @@
 
 import os, stat, re
 from collections import namedtuple
-from os.path import exists, join
+from os.path import exists, join, realpath
 from .util import check_output, call, STDOUT, CalledProcessError
 from tempfile import mkdtemp
 
@@ -81,17 +81,14 @@ def loopmount(filename, mntpoint=None):
         if m.mnt == mntpoint:
             return m
 
-def fix_loop_entry(mnt):
+def fix_loop_entry(mnt, iso):
     '''return new FstabEntry with dev=backing_file and "loop" added to opts'''
-    loopdev = os.path.basename(mnt.dev)
-    backing_file_line = check_output(['losetup', mnt.dev])
-    # The format of the output is "device: [%04x]:%u (backing_device)
-    # Use everything from the lo_device hex digits to the end of the string
-    # to extract the filename
-    m = re.search(r': \[[0-9A-Fa-f]{4,}\]:[0-9]+ \((.*)\)$', backing_file_line)
-    backing_file = m.group(1)
+    # losetup, due to the limitations of LOOP_GET_STATUS64 and the lack of backing_file
+    # in sysfs, truncates the backing file output to < 64 characters. The backing file
+    # must come from the caller.
+
     opts = ','.join([mnt.opts, "loop"])
-    return mnt._replace(dev=backing_file, opts=opts)
+    return mnt._replace(dev=realpath(iso), opts=opts)
 
 def umount(mntpoint):
     try:
@@ -130,11 +127,11 @@ def systemd_escape(path):
 def shell_escape(string):
     return "'%s'" % string.replace("'", "'\\''")
 
-def write_prep_mount(mount, unitdir, desc=None, unitopts=""):
+def write_prep_mount(mount, unitdir, iso, desc=None, unitopts=""):
     if desc is None:
         desc = "Upgrade Media"
     if isloop(mount.dev):
-        mount = fix_loop_entry(mount)
+        mount = fix_loop_entry(mount, iso)
     unit = join(unitdir, systemd_escape(mount.mnt)+'.mount')
     with open(unit, 'w') as u:
         u.write("mount -t %s -o %s %s %s\n" %

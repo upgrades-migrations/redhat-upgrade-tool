@@ -120,7 +120,7 @@ def setup_upgradelink():
         pass
     os.symlink(packagedir, upgradelink)
 
-def setup_media_mount(mnt):
+def setup_media_mount(mnt, iso):
     # make a "media" subdir where all the packages are
     mountpath = os.path.join(upgradelink, "media")
     log.info("setting up mount for %s at %s", mnt.dev, mountpath)
@@ -130,7 +130,7 @@ def setup_media_mount(mnt):
     # make a modified mnt entry that puts it at mountpath
     mediamnt = mnt._replace(rawmnt=mountpath)
     # finally, write out a systemd unit to mount media there
-    unit = write_prep_mount(mediamnt, upgrade_prep_dir)
+    unit = write_prep_mount(mediamnt, upgrade_prep_dir, iso)
     log.info("wrote %s", unit)
 
 def setup_upgraderoot():
