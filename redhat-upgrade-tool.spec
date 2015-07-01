@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.39
+Version:        0.7.40
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Jul  1 2015 David Shea <dshea@redhat.com> 0.7.40-1
+- Apply sslnoverify to all setup_downloader calls
+  Related: rhbz#1169969
+
 * Thu Jun 25 2015 David Shea <dshea@redhat.com> 0.7.39-1
 - Fix traceback for transaction problems with one package
   Resolves: rhbz#1220291
