@@ -252,7 +252,8 @@ def main(args):
                                      instrepo=args.instrepo,
                                      repos=args.repos,
                                      enable_plugins=args.enable_plugins,
-                                     disable_plugins=args.disable_plugins)
+                                     disable_plugins=args.disable_plugins,
+                                     noverifyssl=args.noverifyssl)
         except NoOptionError:
             log.debug("No product name found, skipping gpg check")
 
