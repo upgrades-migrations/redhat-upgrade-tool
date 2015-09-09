@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.41
+Version:        0.7.42
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Sep  9 2015 David Shea <dshea@redhat.com> 0.7.42-1
+- Run all preupgrade scripts and report which failed (phracek)
+  Resolves: rhbz#1252850
+
 * Fri Jul 10 2015 David Shea <dshea@redhat.com> 0.7.41-1
 - Use the filename to determine the kernel version for new-kernel-pkg.
   Resolves: rhbz#1241875
