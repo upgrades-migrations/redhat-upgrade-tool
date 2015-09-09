@@ -336,13 +336,19 @@ def main(args):
     # Run the preuprade scripts if present
     if os.path.isdir(preupgrade_script_path):
         scripts = sorted(rlistdir(preupgrade_script_path))
+        failed_scripts = {}
         for s in scripts:
             if os.access(s, os.X_OK):
                 try:
                     check_call(s)
                 except CalledProcessError as e:
-                    print("%s exited with status %d, exiting" % (s, e.returncode))
-                    sys.exit(1)
+                    failed_scripts[s] = e.returncode
+        if failed_scripts:
+            print("Following preupgrade script(s) failed:\n")
+            for key, val in failed_scripts:
+                print("%s exited with status %d" % (key, val))
+            print('exiting')
+            sys.exit(1)
 
     if not args.skipbootloader:
         if args.skipkernel:
