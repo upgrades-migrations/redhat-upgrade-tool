@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.42
+Version:        0.7.43
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -75,6 +75,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Wed Oct 14 2015 David Shea <dshea@redhat.com> 0.7.43-1
+- Fix the iteration over failed preupgrade scripts (mganisin)
+  Related: rhbz#1252850
+
 * Wed Sep  9 2015 David Shea <dshea@redhat.com> 0.7.42-1
 - Run all preupgrade scripts and report which failed (phracek)
   Resolves: rhbz#1252850
