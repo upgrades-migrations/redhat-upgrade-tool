@@ -345,7 +345,7 @@ def main(args):
                     failed_scripts[s] = e.returncode
         if failed_scripts:
             print("Following preupgrade script(s) failed:\n")
-            for key, val in failed_scripts:
+            for key, val in failed_scripts.iteritems():
                 print("%s exited with status %d" % (key, val))
             print('exiting')
             sys.exit(1)
