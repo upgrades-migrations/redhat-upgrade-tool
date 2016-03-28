@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.9.3
+Version:        0.9.4
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          2
@@ -69,6 +69,10 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Mar 28 2016 David Shea <dshea@redhat.com> - 2:0.9.4-1
+- Do not clean network repos after an upgrade.
+  Resolves: rhbz#1275622
+
 * Wed Jul  1 2015 David Shea <dshea@redhat.com> - 2:0.9.3-1
 - Cleanup repo files added by redhat-upgrade-tool
   Resolves: rhbz#1115782
