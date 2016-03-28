@@ -116,6 +116,11 @@ def parse_args(gui=False):
         p.add_argument('--clean-metadata', action='store_true', default=False,
             help=argparse.SUPPRESS)
 
+        # Special clean mode used by redhat-upgrade-tool-dracut
+        p.add_argument('--clean-upgraded', action='store_const',
+            dest='clean', const='upgraded', default=None,
+            help=argparse.SUPPRESS)
+
     args = p.parse_args()
 
     if not (gui or args.network or args.device or args.iso or args.clean):
@@ -231,7 +236,11 @@ def do_cleanup(args):
         print "removing downloaded packages"
         remove_cache()
     print "removing miscellaneous files"
-    misc_cleanup()
+
+    if args.clean == 'upgraded':
+        misc_cleanup(clean_all_repos=False)
+    else:
+        misc_cleanup(clean_all_repos=True)
 
 def device_setup(args):
     # treat --device like --addrepo REPO=file://$MOUNTPOINT

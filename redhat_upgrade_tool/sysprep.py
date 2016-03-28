@@ -202,7 +202,7 @@ def remove_cache():
         log.info("removing %s", d)
         rm_rf(d)
 
-def misc_cleanup():
+def misc_cleanup(clean_all_repos=True):
     log.info("removing symlink %s", upgradelink)
     rm_f(upgradelink)
     for d in (upgraderoot, upgrade_target_requires):
@@ -212,5 +212,17 @@ def misc_cleanup():
     repodir = '/etc/yum.repos.d'
 
     log.info("removing repo files")
+    # If clean_all_repos is false, leave behind the repos with regular
+    # URLs and just clean the ones with file:// URLs (i.e., repos added
+    # for upgrades from cdrom or other non-network sources)
     for repo in glob.glob(repodir + '/redhat-upgrade-*.repo'):
-        rm_rf(repo)
+        rmrepo=True
+        if not clean_all_repos:
+            with open(repo, "r") as repofile:
+                for line in repofile:
+                    if line.strip().startswith('baseurl') and 'file://' not in line:
+                        rmrepo=False
+                        break
+
+        if rmrepo:
+            rm_rf(repo)
