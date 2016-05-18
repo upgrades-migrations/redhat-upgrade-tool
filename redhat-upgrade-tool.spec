@@ -12,6 +12,7 @@ Source0:        %{name}-%{version}.tar.xz
 # Bug #910326
 Requires:       systemd >= 44-23
 Requires:       grubby
+Requires:       python-rhsm
 
 BuildRequires:  python-libs
 BuildRequires:  systemd-devel
