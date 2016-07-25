@@ -42,7 +42,7 @@ from redhat_upgrade_tool import release_version_file
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
 
-from preup import xccdf
+from preup.xccdf import XccdfHelper
 from preup import settings
 
 import logging
@@ -128,6 +128,7 @@ def check_release_version_file():
         print _("Unable to read upgrade path file: %s") % e
         raise SystemExit(1)
 
+
 def main(args):
     global major_upgrade
 
@@ -165,7 +166,7 @@ def main(args):
 
         if not args.force:
             # Run preupg --riskcheck
-            returncode = xccdf.check_inplace_risk(get_preupgrade_result_name(), 0)
+            returncode = XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), 0)
             if int(returncode) == 0:
                 print _("Preupgrade assistant does not found any risks")
                 print _("Upgrade will continue.")
@@ -178,7 +179,7 @@ def main(args):
                 print ""
                 print _("List of issues:")
 
-                xccdf.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
+                XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
 
                 # Python 2.6 raises EOFError if raw_input receives a SIGWINCH.
                 # Try to tell the difference between that and a real EOF.
