@@ -28,7 +28,7 @@ from ConfigParser import NoOptionError
 from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
-from redhat_upgrade_tool.sysprep import modify_repos
+from redhat_upgrade_tool.sysprep import modify_repos, remove_cache
 from redhat_upgrade_tool.boot import upgrade_boot_args
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
@@ -135,6 +135,10 @@ def main(args):
     if args.clean:
         do_cleanup(args)
         return
+    else:
+        # Leaving cache from previous runs of the tool could foil the correct
+        # download of packages for upgrade (bz#1303982)
+        remove_cache()
 
     if args.device or args.iso:
         device_setup(args)
@@ -320,9 +324,9 @@ def main(args):
     #dump all configuration to upgrade.conf, other tools need to know
     #TODO:some items are structured, would be nice to unpack them
     with Config(upgradeconf) as conf:
-	argsdict = args.__dict__
-	for arg in argsdict:
-	    conf.set("config", arg.__str__(), argsdict[arg].__str__())
+        argsdict = args.__dict__
+        for arg in argsdict:
+            conf.set("config", arg.__str__(), argsdict[arg].__str__())
 
     if args.cleanup_post:
         setup_cleanup_post()
