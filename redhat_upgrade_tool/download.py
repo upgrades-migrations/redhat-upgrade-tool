@@ -497,6 +497,8 @@ class UpgradeDownloader(yum.YumBase):
             return True
         else:
             log.info("no automatic trust for key %s")
+            if hasattr(callback, "userconfirm"):
+                return callback.userconfirm()
             return False
 
     def check_keyfile(self, keyfile):

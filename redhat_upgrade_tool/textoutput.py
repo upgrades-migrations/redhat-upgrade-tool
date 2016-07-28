@@ -22,7 +22,7 @@ import os, sys, time
 
 import rpm
 sys.path.insert(0, '/usr/share/yum-cli')
-from output import YumTextMeter, CacheProgressCallback
+from output import YumTextMeter, CacheProgressCallback, YumOutput
 
 from .callback import *
 from . import terminal as term
@@ -123,6 +123,10 @@ class DownloadCallback(DownloadCallbackBase):
         self.bar.update(amount)
         if amount == total:
             self.bar.finish()
+
+    def userconfirm(self):
+        return YumOutput().userconfirm()
+
 
 class TransactionCallback(RPMTsCallback):
     def __init__(self, numpkgs=0, tty=sys.stderr, prefix="rpm"):
