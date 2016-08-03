@@ -17,39 +17,26 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-import os, glob, re
+import glob
+import os
+import re
 from shutil import copy2
-from ConfigParser import ConfigParser, NoOptionError
 
 from . import _
 from . import cachedir, packagedir, packagelist, update_img_dir
 from . import upgradeconf, upgradelink, upgraderoot
-from .media import write_prep_mount
-from .util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver, check_output
-from .conf import Config
 from . import boot
+from .media import write_prep_mount
+from .util import listdir, mkdir_p, rm_f, rm_rf, is_selinux_enabled, kernelver
+from .conf import Config
+from .repofile import RepoFileParser
 
 import logging
-log = logging.getLogger(__package__+".sysprep")
+log = logging.getLogger(__package__ + ".sysprep")
 
 upgrade_prep_dir = packagedir + "/upgrade-prep"
 repodir = '/etc/yum.repos.d'
 
-# Override ConfigParser.write so we can add comments in the right place
-class YumRepoParser(ConfigParser):
-    # Use this as value to print a comment plus enabled=0
-    DISABLE = "REDHAT_UPGRADE_TOOL_DISABLE"
-
-    def write(self, fp):
-        for section in self.sections():
-            fp.write("[%s]\n" % section)
-            for (key, value) in self.items(section):
-                if key != "__name__":
-                    if value == self.DISABLE:
-                        fp.write("# disabled by redhat-upgrade-tool\nenabled = 0\n")
-                    else:
-                        fp.write("%s=%s\n" % (key, str(value).replace('\n', '\n\t')))
-            fp.write("\n")
 
 def setup_cleanup_post():
     '''Set a flag in upgrade.conf to be read by preupgrade-assistant,
@@ -57,6 +44,7 @@ def setup_cleanup_post():
 
     with Config(upgradeconf) as conf:
         conf.set('postupgrade', 'cleanup', 'True')
+
 
 def link_pkgs(pkgs):
     '''link the named pkgs into packagedir, overwriting existing files.
@@ -105,13 +93,14 @@ def link_pkgs(pkgs):
 
     # write packagelist
     with open(packagelist, 'w') as outf:
-        outf.writelines(p+'\n' for p in pkgbasenames)
+        outf.writelines(p + '\n' for p in pkgbasenames)
 
     # write cleanup data
     with Config(upgradeconf) as conf:
         # packagedir should probably be last, since it contains upgradeconf
         cleanupdirs = [cachedir, packagedir]
         conf.set("cleanup", "dirs", ';'.join(cleanupdirs))
+
 
 def setup_upgradelink():
     log.info("setting up upgrade symlink: %s->%s", upgradelink, packagedir)
@@ -120,6 +109,7 @@ def setup_upgradelink():
     except OSError:
         pass
     os.symlink(packagedir, upgradelink)
+
 
 def setup_media_mount(mnt, iso):
     # make a "media" subdir where all the packages are
@@ -134,6 +124,7 @@ def setup_media_mount(mnt, iso):
     unit = write_prep_mount(mediamnt, upgrade_prep_dir, iso)
     log.info("wrote %s", unit)
 
+
 def setup_upgraderoot():
     if os.path.isdir(upgraderoot):
         log.info("upgrade root dir %s already exists", upgraderoot)
@@ -141,6 +132,7 @@ def setup_upgraderoot():
     else:
         log.info("creating upgraderoot dir: %s", upgraderoot)
         os.makedirs(upgraderoot, 0755)
+
 
 def prep_upgrade(pkgs):
     # put packages in packagedir (also writes packagelist)
@@ -150,11 +142,13 @@ def prep_upgrade(pkgs):
     # make dir for upgraderoot
     setup_upgraderoot()
 
+
 def init_is_systemd():
     try:
         return "systemd" in os.readlink("/sbin/init")
     except OSError:
         return False
+
 
 def modify_bootloader(kernel, initrd):
     log.info("adding new boot entry")
@@ -164,7 +158,7 @@ def modify_bootloader(kernel, initrd):
     if init_is_systemd():
         args.append("systemd.unit=system-upgrade.target")
     else:
-        args.append("init=/usr/libexec/upgrade-init") # XXX hardcoded path :/
+        args.append("init=/usr/libexec/upgrade-init")  # XXX hardcoded path :/
 
     if not is_selinux_enabled():
         args.append("selinux=0")
@@ -186,7 +180,8 @@ def modify_bootloader(kernel, initrd):
     args.append("consoleblank=0")
 
     boot.add_entry(kernel, initrd, banner=_("System Upgrade"), kargs=args,
-            remove_kargs=remove_args)
+                   remove_kargs=remove_args)
+
 
 def prep_boot(kernel, initrd):
     # check for systems that need mdadm.conf
@@ -199,7 +194,8 @@ def prep_boot(kernel, initrd):
     try:
         updates = list(listdir(update_img_dir))
     except (IOError, OSError) as e:
-        log.info("can't list update img dir %s: %s", update_img_dir, e.strerror)
+        log.info("can't list update img dir %s: %s", update_img_dir,
+                 e.strerror)
     if updates:
         log.info("found updates in %s, appending to initrd", update_img_dir)
         boot.initramfs_append_images(initrd, updates)
@@ -217,12 +213,14 @@ def prep_boot(kernel, initrd):
     # set up the boot args
     modify_bootloader(kernel, initrd)
 
+
 def reset_boot():
     '''reset bootloader to previous default and remove our boot entry'''
     conf = Config(upgradeconf)
     kernel = conf.get("boot", "kernel")
     if kernel:
         boot.remove_entry(kernel)
+
 
 def remove_boot():
     '''remove boot images'''
@@ -233,6 +231,7 @@ def remove_boot():
         rm_f(kernel)
     if initrd:
         rm_f(initrd)
+
 
 def remove_cache():
     '''remove our cache dirs'''
@@ -245,26 +244,14 @@ def remove_cache():
         log.info("removing %s", d)
         rm_rf(d)
 
+
 def disable_old_repos():
     for repo in glob.glob(repodir + '/*.repo'):
-        parser = YumRepoParser()
-        parser.read(repo)
+        parser = RepoFileParser(repo)
+        parser.set_option("enabled", "0\n# disabled by redhat-upgrade-tool",
+                          "1")
+        parser.write()
 
-        repo_changed = False
-        for section in parser.sections():
-            enabled = '0'
-            try:
-                enabled = parser.get(section, 'enabled')
-            except NoOptionError:
-                enabled = '1'
-
-            if enabled == '1':
-                parser.set(section, 'enabled', YumRepoParser.DISABLE)
-                repo_changed = True
-
-        if repo_changed:
-            with open(repo, 'w') as repofile:
-                parser.write(repofile)
 
 def misc_cleanup():
     log.info("removing symlink %s", upgradelink)
@@ -281,19 +268,21 @@ def misc_cleanup():
     for repo in glob.glob(repodir + '/*.repo'):
         with open(repo, 'r') as repofile:
             repodata = repofile.read()
-        enabled_data = re.sub('# disabled by redhat-upgrade-tool\nenabled\\s*=\\s*0', 'enabled=1', repodata)
+        enabled_data = re.sub(r"enabled\s*=\s*0\n# disabled by"
+                              " redhat-upgrade-tool", "enabled=1", repodata)
         if enabled_data != repodata:
             with open(repo, 'w') as repofile:
                 repofile.write(enabled_data)
 
+
 def modify_repos(args):
-    """Rewrite the upgrade or iso repo configs for the post-reboot mount paths"""
+    """Rewrite the upgrade or iso repo configs for the post-reboot mount
+    paths.
+    """
     if args.device or args.iso:
         mountpath = os.path.join(upgradelink, "media")
-        repopath = os.path.join(repodir, 'redhat-upgrade-%s.repo' % args.instrepo)
-        parser = YumRepoParser()
-        parser.read(repopath)
-        parser.set('redhat-upgrade-%s' % args.instrepo, 'baseurl', 'file://%s' % mountpath)
-
-        with open(repopath, 'w') as repofile:
-            parser.write(repofile)
+        repopath = os.path.join(repodir, 'redhat-upgrade-{0}.repo'
+                                .format(args.instrepo))
+        parser = RepoFileParser(repopath)
+        parser.set_option("baseurl", "file://{0}".format(mountpath))
+        parser.write()
