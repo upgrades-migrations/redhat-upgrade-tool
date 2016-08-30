@@ -171,10 +171,10 @@ def main(args):
         if not args.force:
             # Run preupg --riskcheck
             returncode = XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), 0)
-            if int(returncode) == 0:
+            if int(returncode) < 12:
                 print _("Preupgrade assistant does not found any risks")
                 print _("Upgrade will continue.")
-            elif int(returncode) == 1:
+            elif int(returncode) == 12:
                 print _("Preupgrade assistant risk check found risks for this upgrade.")
                 print _("You can run preupg --riskcheck --verbose to view these risks.")
                 print _("Addressing high risk issues is required before the in-place upgrade")
@@ -190,6 +190,7 @@ def main(args):
 
                 global sigwinch
                 sigwinch = False
+
                 def handle_sigwinch(signum, frame):
                     global sigwinch
                     sigwinch = True
@@ -214,7 +215,7 @@ def main(args):
                 # TRANSLATORS: y for yes
                 if answer.lower() != _('y'):
                     raise SystemExit(1)
-            elif int(returncode) == 2:
+            elif int(returncode) > 12:
                 print _("preupgrade-assistant risk check found EXTREME risks for this upgrade.")
                 print _("Run preupg --riskcheck --verbose to view these risks.")
                 print _("Continuing with this upgrade is not recommended.")
