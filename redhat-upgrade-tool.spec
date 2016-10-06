@@ -1,18 +1,18 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.44
+Version:        0.7.47
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
 
 License:        GPLv2+
-URL:            https://github.com/dashea/redhat-upgrade-tool
-Source0:        %{name}-%{version}.tar.xz
+URL:            https://github.com/upgrades-migrations/redhat-upgrade-tool
+Source0:        %{url}/archive/%{name}-%{version}.tar.gz
 
 Requires:       grubby
 Requires:       python-rhsm
 
 # Require for preupgr --riskcheck
-Requires:       preupgrade-assistant >= 1.0.2-4
+Requires:       preupgrade-assistant >= 2.1.8-1
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1038299
 Requires:       yum >= 3.2.29-43
@@ -28,7 +28,7 @@ redhat-upgrade-tool is the Red Hat Enterprise Linux Upgrade tool.
 
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}
 
 %build
 make PYTHON=%{__python}
@@ -75,8 +75,32 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Thu Oct 6 2016 Michal Bocek <mbocek@redhat.com> - 1:0.7.47-1
+- Fix traceback caused by Unicode characters that appear in raw_input
+  prompt message during the import of GPG keys.
+  Related: rhbz#1150029
+
+* Wed Sep 7 2016 Michal Bocek <mbocek@redhat.com> - 1:0.7.46-1
+- Reverted changes from 0.7.45 regarding "New return codes from
+  preupgrade-assistant."
+  Related: rhbz#1371553
+
+* Tue Aug 30 2016 Michal Bocek <mbocek@redhat.com> - 1:0.7.45-1
+- New return codes from preupgrade-assistant.
+  Resolves: rhbz#1371553
+- Support include in .repo files.
+  Resolves: rhbz#1270223
+- Prompt user to accept GPG key import.
+  Resolves: rhbz#1150029
+- Fix PYCURL ERROR 22 - remove tool cache at the start of the tool.
+  Resolves: rhbz#1303982
+
+* Tue Jul 26 2016 Petr Hracek <phracek@redhat.com> - 1:0.7.44-2
+- Correct dependency on preupgrade-assistant
+  Related: rhbz#1356806
+
 * Mon Jul 25 2016 Michal Bocek <mbocek@redhat.com> 0.7.44-1
-- Fixed tool failure with AttributeError due to check_inplace_risk().
+- Fix tool failure due to AttributeError (check_inplace_risk).
   Resolves: rhbz#1356806
 
 * Wed Oct 14 2015 David Shea <dshea@redhat.com> 0.7.43-1
@@ -155,7 +179,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 - Disable yum repos with no enabled= line
   Resolves: rhbz#1130686
 
-* Tue Sep  8 2014 David Shea <dshea@redhat.com> 0.7.28-1
+* Mon Sep  8 2014 David Shea <dshea@redhat.com> 0.7.28-1
 - Execute preupgrade-scripts after storing RHEL-7 repos (phracek)
   Related: rhbz#1138615
 

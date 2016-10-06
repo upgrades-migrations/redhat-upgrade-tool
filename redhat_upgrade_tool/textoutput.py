@@ -125,7 +125,23 @@ class DownloadCallback(DownloadCallbackBase):
             self.bar.finish()
 
     def userconfirm(self):
-        return YumOutput().userconfirm()
+        def _raw_input_accepting_unicode(prompt):
+            # When the terminal is set to a non-ASCII English language, the
+            # translated prompt may contain Unicode chars - that results in
+            # a python traceback within the raw_input python built-in function.
+            # This wrapper fixes that.
+            from yum.i18n import to_utf8
+            return raw_input_saved(to_utf8(prompt))
+
+        import __builtin__
+        raw_input_saved = __builtin__.raw_input
+        __builtin__.raw_input = _raw_input_accepting_unicode
+
+        response = YumOutput().userconfirm()
+
+        __builtin__.raw_input = raw_input_saved
+
+        return response
 
 
 class TransactionCallback(RPMTsCallback):
