@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.47
+Version:        0.7.48
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -10,9 +10,7 @@ Source0:        %{url}/archive/%{name}-%{version}.tar.gz
 
 Requires:       grubby
 Requires:       python-rhsm
-
-# Require for preupgr --riskcheck
-Requires:       preupgrade-assistant >= 2.1.8-1
+Requires:       preupgrade-assistant >= 2.2.0-1
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1038299
 Requires:       yum >= 3.2.29-43
@@ -75,6 +73,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Dec 5 2016 Michal Bocek <mbocek@redhat.com> - 1:0.7.48-1
+- Support Preupgrade Assistant version 2.2.0
+  Resolves: rhbz#1398401
+- Fix usage of HTTPS repo URL with --noverify option
+  Resolves: rhbz#1398318
+
 * Thu Oct 6 2016 Michal Bocek <mbocek@redhat.com> - 1:0.7.47-1
 - Fix traceback caused by Unicode characters that appear in raw_input
   prompt message during the import of GPG keys.

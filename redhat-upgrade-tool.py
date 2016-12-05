@@ -42,8 +42,8 @@ from redhat_upgrade_tool import release_version_file
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
 
-from preup.xccdf import XccdfHelper
-from preup import settings
+from preupg.xccdf import XccdfHelper
+from preupg import settings
 
 import logging
 log = logging.getLogger("redhat-upgrade-tool")
@@ -106,7 +106,8 @@ def reboot():
     call(['reboot'])
 
 def get_preupgrade_result_name():
-    return os.path.join(settings.result_dir, settings.xml_result_name)
+    return os.path.join(settings.assessment_results_dir,
+                        settings.xml_result_name)
 
 def check_release_version_file():
     if not os.path.exists(release_version_file):
