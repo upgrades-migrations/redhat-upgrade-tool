@@ -228,6 +228,7 @@ class UpgradeDownloader(yum.YumBase):
                     f.write("name=Upgrade - %s\n" % repo.id)
                     f.write("enabled=1\n")
                     f.write("skip_if_unavailable=True\n")
+                    f.write("sslverify=%s\n" % repo.sslverify)
                     if repo.gpgcheck:
                         f.write("gpgcheck=1\n")
                     else:
