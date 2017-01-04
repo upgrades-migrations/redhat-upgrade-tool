@@ -294,6 +294,9 @@ class UpgradeDownloader(yum.YumBase):
 
         done = set()
         for pkg1, pkg2, err in self.po_with_problems:
+            if pkg1 is None or pkg2 is None:
+                log.error("Empty package information for error %s" % (err))
+                continue
             if (pkg1,pkg2) not in done:
                 problems.append("%s requires %s" % (format_replacement(pkg1),
                                                     format_replacement(pkg2)))
