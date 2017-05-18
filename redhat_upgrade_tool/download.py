@@ -454,7 +454,11 @@ class UpgradeDownloader(yum.YumBase):
             cacheinitrd = os.path.join(cachedir, os.path.basename(initrdpath))
             initrd = grab_and_check(arch, 'upgrade', cacheinitrd)
             # copy the downloaded initrd to the target path
-            copy2(initrd, initrdpath)
+            try:
+                copy2(initrd, initrdpath)
+            except IOError as e:
+                print _("Copying initrd to '%s' failed:\n%s") % (initrdpath, e)
+                raise SystemExit(1)
             initrd = initrdpath
         except TreeinfoError as e:
             raise YumBaseError(_("invalid data in .treeinfo: %s") % str(e))
