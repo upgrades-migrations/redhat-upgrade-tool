@@ -44,7 +44,7 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 
 
 %files
-%doc README.asciidoc TODO.asciidoc COPYING
+%doc README.asciidoc COPYING
 # systemd stuff
 %{_unitdir}/system-upgrade.target
 %{_unitdir}/upgrade-prep.service
