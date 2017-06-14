@@ -1,0 +1,6 @@
+include   Makefile
+include   README.asciidoc
+include   COPYING
+
+include   man/*
+include   systemd/*
