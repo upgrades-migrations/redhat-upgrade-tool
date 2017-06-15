@@ -198,7 +198,10 @@ def main(args):
     elif not f.instrepo.gpgcheck:
         # If instrepo is a Red Hat repo, add the gpg key and reload the repos
         try:
-            if f.treeinfo.get('product', 'name') == 'Red Hat Enterprise Linux':
+            key = "product"
+            if not f.treeinfo.has_section(key):
+                key = "release"
+            if f.treeinfo.get(key, 'name') == 'Red Hat Enterprise Linux':
                 log.info("Reloading repos with GPG key")
                 args.repos.append(('gpgkey', '%s=%s' % (f.instrepo.name, rhel_gpgkey_path)))
                 f = setup_downloader(version=args.network,
