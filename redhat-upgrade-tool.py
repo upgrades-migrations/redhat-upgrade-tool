@@ -28,7 +28,7 @@ from ConfigParser import NoOptionError
 from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
-from redhat_upgrade_tool.sysprep import modify_repos, remove_cache
+from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
@@ -38,6 +38,8 @@ from redhat_upgrade_tool import upgradeconf
 from redhat_upgrade_tool import rhel_gpgkey_path
 from redhat_upgrade_tool import preupgrade_script_path
 from redhat_upgrade_tool import release_version_file
+from redhat_upgrade_tool import _, kernelpath, initrdpath
+from redhat_upgrade_tool import MIN_AVAIL_BYTES_FOR_BOOT
 
 import redhat_upgrade_tool.logutils as logutils
 import redhat_upgrade_tool.media as media
@@ -51,7 +53,6 @@ def message(m):
     print m
     log.info(m)
 
-from redhat_upgrade_tool import _, kernelpath, initrdpath
 
 def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
                      enable_plugins=[], disable_plugins=[], noverifyssl=False):
@@ -364,6 +365,18 @@ def main(args):
             initrd = initrdpath
         upgrade_boot_args()
         prep_boot(kernel, initrd)
+
+    # Check for available space in /boot/ needed for kernel and grub
+    # installation during the upgrade.
+    statvfs = os.statvfs("/boot")
+    avail_bytes = statvfs.f_frsize * statvfs.f_bavail
+    if avail_bytes < MIN_AVAIL_BYTES_FOR_BOOT:
+        reset_boot()
+        additional_mib_needed = \
+            (MIN_AVAIL_BYTES_FOR_BOOT - avail_bytes) / 2**20
+        sys.stderr.write(_("Not enough space. /boot/ needs additional %d MiB"
+                           ".\n") % additional_mib_needed)
+        raise SystemExit(1)
 
     # Replace temporary media paths
     modify_repos(args)
