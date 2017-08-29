@@ -406,7 +406,8 @@ class UpgradeDownloader(yum.YumBase):
                 log.debug("using cached .treeinfo %s", outfile)
                 self._treeinfo = Treeinfo(outfile)
             else:
-                log.debug("fetching .treeinfo from repo '%s'", self.instrepoid)
+                log.debug("fetching .treeinfo from repo '%s'",
+                          self.instrepo.urls[0])
                 if os.path.exists(outfile):
                     os.remove(outfile)
                 try:
@@ -418,8 +419,9 @@ class UpgradeDownloader(yum.YumBase):
                                                         reget=None)
                     except Exception as e:
                         log.error("Error downloading .treeinfo or treeinfo"
-                                  "from repo %s: %s" % (self.instrepoid, e))
-                        fn = None
+                                  " from repo %s: %s"
+                                  % (self.instrepo.urls[0], e))
+                        raise SystemExit(1)
                 self._treeinfo = Treeinfo(fn)
                 log.debug(".treeinfo saved at %s", fn)
             self._treeinfo.checkvalues()
