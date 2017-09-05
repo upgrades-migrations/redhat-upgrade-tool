@@ -11,6 +11,7 @@ Source0:        %{url}/archive/%{name}-%{version}.tar.gz
 Requires:       grubby
 Requires:       python-rhsm
 Requires:       preupgrade-assistant >= 2.2.0-1
+Requires:       preupgrade-assistant-el6toel7 >= 0.6.71
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1038299
 Requires:       yum >= 3.2.29-43
