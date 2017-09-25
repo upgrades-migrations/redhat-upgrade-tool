@@ -51,6 +51,9 @@ do_reboot() {
     reboot --force
 }
 
+# Decompress kernel modules - applies to RHEL 7.4+
+find /lib/modules/$(uname -r) -name '*.ko.xz' | while read x; do xz -d $x; ln ${x%%.xz} $x; done
+
 # return the number of items given
 count() { echo $#; }
 
