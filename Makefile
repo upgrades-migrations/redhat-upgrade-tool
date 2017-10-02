@@ -19,7 +19,7 @@ build: $(SUBDIRS)
 	$(PYTHON) setup.py build
 
 test:
-	py.test
+	nosetests -v --nocapture
 
 test-all:
 	tox
