@@ -18,6 +18,13 @@ $(CLEAN_TARGETS):
 build: $(SUBDIRS)
 	$(PYTHON) setup.py build
 
+test:
+	nosetests -v --nocapture
+
+test-all:
+	tox
+
+
 install: all $(INSTALL_TARGETS)
 	$(PYTHON) setup.py install --skip-build --root $(DESTDIR)/
 
