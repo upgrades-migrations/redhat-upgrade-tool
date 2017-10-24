@@ -112,22 +112,24 @@ def get_preupgrade_result_name():
 
 def check_release_version_file():
     if not os.path.exists(release_version_file):
-        print _("File for checking if upgrade path is possible doesn't exist.")
+        print _("First, run the Preupgrade Assistant to analyze the system.")
         raise SystemExit(1)
     try:
         with open(release_version_file) as release_file:
             release = release_file.readlines()
-        try:
-            rel = release[1].strip()
-            if rel != args.network:
-                print _("You are trying to upgrade on system %s which is not allowed." % args.network)
-                print _("Preupgrade-assistant assess the system for upgrade to %s version" % rel)
-                raise SystemExit(1)
-        except KeyError:
-            print _("Release file doesn't contain proper versions.")
-            raise SystemExit(1)
     except (IOError, OSError) as e:
-        print _("Unable to read upgrade path file: %s") % e
+        print _("Unable to read the %s file provided by the Preupgrade"
+                " Assistant:\n %s") % (release_version_file, e)
+        raise SystemExit(1)
+    try:
+        rel = release[1].strip()
+    except KeyError:
+        print _("Error: The %s file provided by the Preupgrade Assistant has"
+                " incorrect content.") % release_version_file
+        raise SystemExit(1)
+    if rel != args.network:
+        print _("The installed version of Preupgrade Assistant allows upgrade"
+                " only to the system version %s." % args.network)
         raise SystemExit(1)
 
 
@@ -168,22 +170,21 @@ def main(args):
 
         # Check if preupgrade-assistant has been run
         if args.force:
-            log.info("Skipping check for preupgrade-assisant")
-
-        if not args.force:
+            log.info("Skipping examining the Preupgrade Assistant results.")
+        else:
             # Run preupg --riskcheck
             returncode = XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), 0)
             if int(returncode) == 0:
-                print _("Preupgrade assistant does not found any risks")
-                print _("Upgrade will continue.")
+                print _("The Preupgrade Assistant hasn't found any risks.\n"
+                        "Upgrade will continue.")
             elif int(returncode) == 1:
-                print _("Preupgrade assistant risk check found risks for this upgrade.")
-                print _("You can run preupg --riskcheck --verbose to view these risks.")
-                print _("Addressing high risk issues is required before the in-place upgrade")
-                print _("and ignoring these risks may result in a broken upgrade and unsupported upgrade.")
-                print _("Please backup your data.")
-                print ""
-                print _("List of issues:")
+                print _("The Preupgrade Assistant has found upgrade risks.\n"
+                        " You can run 'preupg --riskcheck --verbose' to view"
+                        " these risks.\nAddressing high risk issues is"
+                        " mandatory before continuing with the upgrade.\n"
+                        "Ignoring these risks may result in a broken and/or"
+                        " unsupported upgrade.\nPlease backup your data.\n\n"
+                        "List of issues:")
 
                 XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
 
@@ -217,13 +218,15 @@ def main(args):
                 if answer.lower() != _('y'):
                     raise SystemExit(1)
             elif int(returncode) == 2:
-                print _("preupgrade-assistant risk check found EXTREME risks for this upgrade.")
-                print _("Run preupg --riskcheck --verbose to view these risks.")
-                print _("Continuing with this upgrade is not recommended.")
+                print _("The Preupgrade Assistant has found EXTREME upgrade"
+                        " risks.\nRun preupg --riskcheck --verbose to view\n"
+                        " these risks.\nContinuing with this upgrade is not\n"
+                        " recommended - the system will be unsupported\n"
+                        " and most likely broken after the upgrade.")
                 raise SystemExit(1)
             else:
-                print _("preupgrade-assistant has not been run.")
-                print _("To perform this upgrade, either run preupg or run redhat-upgrade-tool --force")
+                print _("The Preupgrade Assistant has not been run.\n"
+                        "To upgrade the system, run preupg first.")
                 raise SystemExit(1)
 
     # Check that we are upgrading to the same variant
