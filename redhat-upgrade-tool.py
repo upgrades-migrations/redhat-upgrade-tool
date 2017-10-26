@@ -117,7 +117,7 @@ def get_preupgrade_result_name():
                         settings.xml_result_name)
 
 
-def check_preupg_target_system_version():
+def check_preupg_target_system_version(treeinfo):
     if not os.path.exists(release_version_file):
         print _("First, run the Preupgrade Assistant to analyze the system.")
         raise SystemExit(1)
@@ -129,14 +129,15 @@ def check_preupg_target_system_version():
                 " Assistant:\n %s") % (release_version_file, e)
         raise SystemExit(1)
     try:
-        rel = release[1].strip()
+        preupg_supported_sysver = release[1].strip()
     except KeyError:
         print _("Error: The %s file provided by the Preupgrade Assistant has"
                 " incorrect content.") % release_version_file
         raise SystemExit(1)
-    if rel != args.network:
+    installation_media_sysver = treeinfo.get('general', 'version')
+    if preupg_supported_sysver != installation_media_sysver:
         print _("The installed version of Preupgrade Assistant allows upgrade"
-                " only to the system version %s." % args.network)
+                " only to the system version %s." % preupg_supported_sysver)
         raise SystemExit(1)
 
 
@@ -164,8 +165,8 @@ def main(args):
                          disable_plugins=args.disable_plugins,
                          noverifyssl=args.noverifyssl)
 
-    if not args.force and args.network:
-        check_preupg_target_system_version()
+    if not args.force:
+        check_preupg_target_system_version(f.treeinfo)
 
     if is_major_version_upgrade(f.treeinfo):
         major_upgrade = True
