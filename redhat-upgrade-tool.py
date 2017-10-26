@@ -49,6 +49,8 @@ from preupg import settings
 
 import logging
 log = logging.getLogger("redhat-upgrade-tool")
+
+
 def message(m):
     print m
     log.info(m)
@@ -75,6 +77,7 @@ def setup_downloader(version, instrepo=None, cacheonly=False, repos=[],
         log.info("disabled repos: " + " ".join(disabled_repos))
     return f
 
+
 def download_packages(f):
     updates = f.build_update_transaction(callback=output.DepsolveCallback(f))
     # check for empty upgrade transaction
@@ -95,6 +98,7 @@ def download_packages(f):
 
     return updates
 
+
 def transaction_test(pkgs):
     print _("testing upgrade transaction")
     pkgfiles = set(po.localPkg() for po in pkgs)
@@ -103,14 +107,17 @@ def transaction_test(pkgs):
     rv = fu.test_transaction(callback=output.TransactionCallback(numpkgs=len(pkgfiles)))
     return (probs, rv)
 
+
 def reboot():
     call(['reboot'])
+
 
 def get_preupgrade_result_name():
     return os.path.join(settings.assessment_results_dir,
                         settings.xml_result_name)
 
-def check_release_version_file():
+
+def check_preupg_target_system_version():
     if not os.path.exists(release_version_file):
         print _("First, run the Preupgrade Assistant to analyze the system.")
         raise SystemExit(1)
@@ -157,98 +164,20 @@ def main(args):
                          disable_plugins=args.disable_plugins,
                          noverifyssl=args.noverifyssl)
 
-    # Compare the first part of the version number in the treeinfo with the
-    # first part of the version number of the system to determine if this is a
-    # major version upgrade
     if not args.force and args.network:
-        check_release_version_file()
+        check_preupg_target_system_version()
 
-    if f.treeinfo.get('general', 'version').split('.')[0] != \
-            platform.linux_distribution()[1].split('.')[0]:
-
+    if is_major_version_upgrade(f.treeinfo):
         major_upgrade = True
-
-        # Check if preupgrade-assistant has been run
-        if args.force:
-            log.info("Skipping examining the Preupgrade Assistant results.")
+        if not args.force:
+            check_preupg_risks()
         else:
-            # Run preupg --riskcheck
-            returncode = XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), 0)
-            if int(returncode) == 0:
-                print _("The Preupgrade Assistant hasn't found any risks.\n"
-                        "Upgrade will continue.")
-            elif int(returncode) == 1:
-                print _("The Preupgrade Assistant has found upgrade risks.\n"
-                        " You can run 'preupg --riskcheck --verbose' to view"
-                        " these risks.\nAddressing high risk issues is"
-                        " mandatory before continuing with the upgrade.\n"
-                        "Ignoring these risks may result in a broken and/or"
-                        " unsupported upgrade.\nPlease backup your data.\n\n"
-                        "List of issues:")
+            log.info("Skipping examining the Preupgrade Assistant results.")
 
-                XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
-
-                # Python 2.6 raises EOFError if raw_input receives a SIGWINCH.
-                # Try to tell the difference between that and a real EOF.
-
-                global sigwinch
-                sigwinch = False
-                def handle_sigwinch(signum, frame):
-                    global sigwinch
-                    sigwinch = True
-                orig_handler = signal.signal(signal.SIGWINCH, handle_sigwinch)
-
-                while True:
-                    try:
-                        sigwinch = False
-                        answer = raw_input(_("Continue with the upgrade [Y/N]? "))
-                        break
-                    except EOFError:
-                        if sigwinch:
-                            # Not a real EOF, try again
-                            print
-                            continue
-                        else:
-                            # Real EOF, exit
-                            answer = ''
-                            break
-                signal.signal(signal.SIGWINCH, orig_handler)
-
-                # TRANSLATORS: y for yes
-                if answer.lower() != _('y'):
-                    raise SystemExit(1)
-            elif int(returncode) == 2:
-                print _("The Preupgrade Assistant has found EXTREME upgrade"
-                        " risks.\nRun preupg --riskcheck --verbose to view\n"
-                        " these risks.\nContinuing with this upgrade is not\n"
-                        " recommended - the system will be unsupported\n"
-                        " and most likely broken after the upgrade.")
-                raise SystemExit(1)
-            else:
-                print _("The Preupgrade Assistant has not been run.\n"
-                        "To upgrade the system, run preupg first.")
-                raise SystemExit(1)
-
-    # Check that we are upgrading to the same variant
     if not args.force:
-        distro = platform.linux_distribution()[0]
-        if not distro.startswith("Red Hat Enterprise Linux "):
-            print _("Invalid distribution: %s") % distro
-            raise SystemExit(1)
-
-        from_variant = distro[len('Red Hat Enterprise Linux '):]
-        try:
-            to_variant = f.treeinfo.get('general', 'variant')
-        except NoOptionError:
-            print _("Upgrade repository is not a Red Hat Enterprise Linux repository")
-            raise SystemExit(1)
-
-        if from_variant != to_variant:
-            print _("Upgrade requested from Red Hat Enterprise Linux %s to %s") % (from_variant, to_variant)
-            print _("Upgrades between Red Hat Enterprise Linux variants is not supported.")
-            raise SystemExit(1)
+        check_same_variant_upgrade(f.treeinfo)
     else:
-        log.info("Skipping variant check")
+        log.info("Skipping system variant check.")
 
     if args.nogpgcheck:
         f._override_sigchecks = True
@@ -316,7 +245,6 @@ def main(args):
         # Run a test transaction
         probs, rv = transaction_test(pkgs)
 
-
     # And prepare for upgrade
     # TODO: use polkit to get root privs for these things
     print _("setting up system for upgrade")
@@ -329,7 +257,7 @@ def main(args):
     # Save the repo configuration
     f.save_repo_configs()
 
-    #dump all configuration to upgrade.conf, other tools need to know
+    # Dump all configuration to upgrade.conf, other tools need to know
     #TODO:some items are structured, would be nice to unpack them
     with Config(upgradeconf) as conf:
         argsdict = args.__dict__
@@ -344,7 +272,6 @@ def main(args):
     # before the postupgrade scripts are run.
     mkdir_p('/root/preupgrade')
     shutil.copyfile(upgradeconf, '/root/preupgrade/upgrade.conf')
-
 
     # Run the preuprade scripts if present
     if os.path.isdir(preupgrade_script_path):
@@ -430,6 +357,93 @@ def main(args):
             for line in s.format_details():
                 print "    "+line
         print _("Continue with the upgrade at your own risk.")
+
+
+def is_major_version_upgrade(treeinfo):
+    """Compare the first part of the version number in the treeinfo with the
+    first part of the version number of the system to determine if this is a
+    major version upgrade.
+    """
+    return treeinfo.get('general', 'version').split('.')[0] != \
+        platform.linux_distribution()[1].split('.')[0]
+
+
+def check_preupg_risks():
+    returncode = XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), 0)
+    if int(returncode) == 0:
+        print _("The Preupgrade Assistant hasn't found any risks.\n"
+                "Upgrade will continue.")
+    elif int(returncode) == 1:
+        print _("The Preupgrade Assistant has found upgrade risks.\n"
+                " You can run 'preupg --riskcheck --verbose' to view"
+                " these risks.\nAddressing high risk issues is"
+                " mandatory before continuing with the upgrade.\n"
+                "Ignoring these risks may result in a broken and/or"
+                " unsupported upgrade.\nPlease backup your data.\n\n"
+                "List of issues:")
+
+        XccdfHelper.check_inplace_risk(get_preupgrade_result_name(), verbose=2)
+
+        # Python 2.6 raises EOFError if raw_input receives a SIGWINCH.
+        # Try to tell the difference between that and a real EOF.
+
+        global sigwinch
+        sigwinch = False
+        def handle_sigwinch(signum, frame):
+            global sigwinch
+            sigwinch = True
+        orig_handler = signal.signal(signal.SIGWINCH, handle_sigwinch)
+
+        while True:
+            try:
+                sigwinch = False
+                answer = raw_input(_("Continue with the upgrade [Y/N]? "))
+                break
+            except EOFError:
+                if sigwinch:
+                    # Not a real EOF, try again
+                    print
+                    continue
+                else:
+                    # Real EOF, exit
+                    answer = ''
+                    break
+        signal.signal(signal.SIGWINCH, orig_handler)
+
+        # TRANSLATORS: y for yes
+        if answer.lower() != _('y'):
+            raise SystemExit(1)
+    elif int(returncode) == 2:
+        print _("The Preupgrade Assistant has found EXTREME upgrade"
+                " risks.\nRun preupg --riskcheck --verbose to view\n"
+                " these risks.\nContinuing with this upgrade is not\n"
+                " recommended - the system will be unsupported\n"
+                " and most likely broken after the upgrade.")
+        raise SystemExit(1)
+    else:
+        print _("The Preupgrade Assistant has not been run.\n"
+                "To upgrade the system, run preupg first.")
+        raise SystemExit(1)
+
+
+def check_same_variant_upgrade(treeinfo):
+    distro = platform.linux_distribution()[0]
+    if not distro.startswith("Red Hat Enterprise Linux "):
+        print _("Invalid distribution: %s") % distro
+        raise SystemExit(1)
+
+    from_variant = distro[len('Red Hat Enterprise Linux '):]
+    try:
+        to_variant = treeinfo.get('general', 'variant')
+    except NoOptionError:
+        print _("Upgrade repository is not a Red Hat Enterprise Linux repository")
+        raise SystemExit(1)
+
+    if from_variant != to_variant:
+        print _("Upgrade requested from Red Hat Enterprise Linux %s to %s") % (from_variant, to_variant)
+        print _("Upgrades between Red Hat Enterprise Linux variants is not supported.")
+        raise SystemExit(1)
+
 
 if __name__ == '__main__':
     args = parse_args()
