@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: redhat-upgrade-tool
 .\"    Author: [see the "AUTHORS" section]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 11/08/2013
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/08/2017
 .\"    Manual: redhat-upgrade-tool User Manual
 .\"    Source: redhat-upgrade-tool
 .\"  Language: English
 .\"
-.TH "REDHAT\-UPGRADE\-TOOL" "8" "11/08/2013" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Manual"
+.TH "REDHAT\-UPGRADE\-TOO" "8" "11/08/2017" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Man"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -28,13 +28,13 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-redhat\-upgrade\-tool \- Red Hat Upgrade tool
+redhat-upgrade-tool \- Red Hat Upgrade tool
 .SH "SYNOPSIS"
 .sp
 redhat\-upgrade\-tool [\fIOPTIONS\fR] \fBSOURCE\fR
 .SH "DESCRIPTION"
 .sp
-\fBredhat\-upgrade\-tool\fR is the Red Hat Upgrade tool\&.
+\fBredhat\-upgrade\-tool\fR is the Red Hat Upgrade Tool\&.
 .sp
 The \fBredhat\-upgrade\-tool\fR client runs on the system to be upgraded\&. It determines what packages are needed for upgrade and gathers them from the source(s) given\&. It also fetches and sets up the boot images needed to run the upgrade and sets up the system to perform the upgrade at next boot\&.
 .sp
@@ -87,11 +87,11 @@ will scan all currently\-mounted removable devices (USB disks, optical media, et
 Installation image file\&.
 .RE
 .PP
-\fB\-\-network\fR \fIVERSION\fR
+\fB\-\-network\fR \fIRELEASEVER\fR
 .RS 4
-Online repos matching
-\fIVERSION\fR
-(a number or "rawhide")
+Online repos\&.
+\fIRELEASEVER\fR
+will be used to replace $releasever variable should it occur in any repo URL\&.
 .RE
 .sp
 Multiple sources may be used, if desired\&.
@@ -144,9 +144,9 @@ Clean up everything written by
 .sp
 Upgrade to RHEL 7\&.0 by downloading all needed packages and data from the specified repository\&.
 .sp
-\fBredhat\-upgrade\-tool \-\-device \-\-network 7\&.0\fR
+\fBredhat\-upgrade\-tool \-\-device\fR
 .sp
-Upgrade to RHEL 7\&.0 using install media mounted somewhere on the system, fetching updates from the network if needed\&.
+Upgrade the system by using installation media mounted on the system, fetching updates from the network if needed\&.
 .SH "EXIT STATUS"
 .PP
 0

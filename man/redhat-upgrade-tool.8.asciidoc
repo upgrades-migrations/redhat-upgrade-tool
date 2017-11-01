@@ -1,5 +1,5 @@
 redhat-upgrade-tool(8)
-========
+======================
 :man source:  redhat-upgrade-tool
 :man manual:  redhat-upgrade-tool User Manual
 
@@ -63,8 +63,9 @@ etc.)
 *--iso* 'ISO'::
 Installation image file.
 
-*--network* 'VERSION'::
-Online repos matching 'VERSION' (a number or "rawhide")
+*--network* 'RELEASEVER'::
+Online repos. 'RELEASEVER' will be used to replace $releasever variable should
+it occur in any repo URL.
 
 Multiple sources may be used, if desired.
 
@@ -105,9 +106,9 @@ EXAMPLES
 Upgrade to RHEL 7.0 by downloading all needed packages and data from the
 specified repository.
 
-*redhat-upgrade-tool --device --network 7.0*
+*redhat-upgrade-tool --device*
 
-Upgrade to RHEL 7.0 using install media mounted somewhere on the system,
+Upgrade the system by using installation media mounted on the system,
 fetching updates from the network if needed.
 
 EXIT STATUS

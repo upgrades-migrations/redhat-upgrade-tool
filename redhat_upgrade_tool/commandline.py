@@ -85,9 +85,9 @@ def parse_args(gui=False):
         help=_('device or mountpoint. default: check mounted devices'))
     req.add_option('--iso', type="isofile",
         help=_('installation image file'))
-    # Translators: This is for '--network [VERSION]' in --help output
-    req.add_option('--network', metavar=_('VERSION'), type="VERSION",
-        help=_('online repos matching VERSION (a number or "rawhide")'))
+    req.add_option('--network', metavar=_('RELEASEVER'), type="RELEASEVER",
+        help=_('online repos. \'RELEASEVER\' will be used to replace'
+               ' $releasever variable should it occur in any repo URL.'))
 
 
     # === options for --network ===
@@ -212,7 +212,7 @@ def gpgkeyfile(option, opt, value):
         raise optparse.OptionValueError(_("File is not a GPG key"))
     return 'file://' + os.path.abspath(arg)
 
-def VERSION(option, opt, value):
+def RELEASEVER(option, opt, value):
     if value.lower() == 'rawhide':
         return 'rawhide'
 
@@ -226,7 +226,7 @@ def VERSION(option, opt, value):
         if value[0] == '-':
             msg = _("%s option requires an argument") % opt
         else:
-            msg = _("Invalid value for version")
+            msg = _("Invalid value for --network option")
         raise optparse.OptionValueError(msg)
 
     if value >= version:
@@ -236,12 +236,13 @@ def VERSION(option, opt, value):
         raise optparse.OptionValueError(msg)
 
 class Option(optparse.Option):
-    TYPES = optparse.Option.TYPES + ("device_or_mnt", "isofile", "VERSION", "gpgkeyfile")
+    TYPES = optparse.Option.TYPES + \
+        ("device_or_mnt", "isofile", "RELEASEVER", "gpgkeyfile")
     TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
 
     TYPE_CHECKER["device_or_mnt"] = device_or_mnt
     TYPE_CHECKER["isofile"] = isofile
-    TYPE_CHECKER["VERSION"] = VERSION
+    TYPE_CHECKER["RELEASEVER"] = RELEASEVER
     TYPE_CHECKER["gpgkeyfile"] = gpgkeyfile
 
 def do_cleanup(args):
