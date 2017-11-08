@@ -1,5 +1,5 @@
 Name:           redhat-upgrade-tool
-Version:        0.7.50
+Version:        0.7.51
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -73,6 +73,13 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 #{_datadir}/redhat-upgrade-tool/ui
 
 %changelog
+* Mon Nov 08 2017 Michal Bocek <mbocek@redhat.com> - 1:0.7.51-1
+- Remove dependency on preupgrade-assistant-el6toel7 package
+- Fail with proper error message when .treeinfo is not available
+  Related: rhbz#1486439
+- Check if upgrading to the RHEL version allowed by the Preupgrade Assistant
+  Resolves: rhbz#1436310
+
 * Mon Sep 25 2017 Michal Bocek <mbocek@redhat.com> - 1:0.7.50-1
 - Decompress kernel modules (applies to RHEL 7.4+)
   Resolves: rhbz#1486962
