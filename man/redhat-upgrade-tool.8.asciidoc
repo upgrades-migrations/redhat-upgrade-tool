@@ -1,5 +1,5 @@
 redhat-upgrade-tool(8)
-========
+======================
 :man source:  redhat-upgrade-tool
 :man manual:  redhat-upgrade-tool User Manual
 
@@ -16,14 +16,14 @@ DESCRIPTION
 -----------
 *redhat-upgrade-tool* is the Red Hat Upgrade Tool.
 
-The *redhat-upgrade-tool* client runs on the system to be upgraded. It determines what
-packages are needed for upgrade and gathers them from the source(s) given.
+The *redhat-upgrade-tool* client runs on the source system. It determines what
+packages are needed for upgrade and gathers them from the given source(s).
 It also fetches and sets up the boot images needed to run the upgrade and
 sets up the system to perform the upgrade at next boot.
 
-The actual upgrade takes place when the system is rebooted, using the boot
-images set up by *redhat-upgrade-tool*. The upgrade initrd starts the existing system
-(mostly) as normal, lets it mount all the local filesystems, then starts the
+The actual upgrade occurs when the system is rebooted, using the boot
+images set up by *redhat-upgrade-tool*. The upgrade initrd starts the source
+system as normal, lets it mount all the local filesystems, and then starts the
 upgrade.
 
 When the upgrade finishes, it reboots the system into the newly-upgraded OS.
@@ -52,19 +52,21 @@ Automatically reboot to start the upgrade when ready.
 SOURCE
 ~~~~~~
 
-These options tell *redhat-upgrade-tool* where to look for the packages and boot images
-needed to run the upgrade. At least one of these options is required.
+These options provide *redhat-upgrade-tool* with the information where to look
+for the packages and boot images needed to run the upgrade. At least one of
+these options is required.
 
 *--device* ['DEV']::
-Device or mountpoint of mounted install media. If 'DEV' is omitted, *redhat-upgrade-tool*
-will scan all currently-mounted removable devices (USB disks, optical media,
-etc.)
+Device or mountpoint of mounted install media. If 'DEV' is omitted,
+*redhat-upgrade-tool* will scan all currently-mounted removable devices
+(for example USB disks and optical media).
 
 *--iso* 'ISO'::
 Installation image file.
 
-*--network* 'VERSION'::
-Online repos matching 'VERSION' (a number or "rawhide")
+*--network* 'RELEASEVER'::
+Online repos. 'RELEASEVER' will be used to replace $releasever variable if it
+occurs in some repo URL.
 
 Multiple sources may be used, if desired.
 
@@ -73,10 +75,10 @@ Additional options for *--network*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *--enablerepo* 'REPOID'::
-Enable one or more repos (wildcards allowed).
+Enable one or more repos (wildcards are allowed).
 
 *--disablerepo* 'REPOID'::
-Disable one or more repos (wildcards allowed).
+Disable one or more repos (wildcards are allowed).
 
 *--addrepo* 'REPOID=[@]URL'::
 Add the repo at 'URL'. Prefix URL with '@' to indicate that the URL is a
@@ -84,7 +86,7 @@ mirrorlist.
 
 *--instrepo* 'REPOID'::
 Get upgrader boot images from the repo named 'REPOID'. The repo must contain a
-valid '.treeinfo' file which points to the location of usable 'kernel' and
+valid '.treeinfo' file, which points to the location of usable 'kernel' and
 'upgrade' images.
 
 
@@ -92,7 +94,7 @@ Cleanup commands
 ~~~~~~~~~~~~~~~~
 
 *--resetbootloader*::
-Remove any modifications made to bootloader configuration.
+Remove any modifications made to the bootloader configuration.
 
 *--clean*::
 Clean up everything written by *redhat-upgrade-tool*.
@@ -105,9 +107,9 @@ EXAMPLES
 Upgrade to RHEL 7.0 by downloading all needed packages and data from the
 specified repository.
 
-*redhat-upgrade-tool --device --network 7.0*
+*redhat-upgrade-tool --device*
 
-Upgrade to RHEL 7.0 using install media mounted somewhere on the system,
+Upgrade the system by using installation media mounted on the system,
 fetching updates from the network if needed.
 
 EXIT STATUS
