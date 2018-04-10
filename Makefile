@@ -42,6 +42,7 @@ redhat-upgrade-tool-$(VERSION).tar.xz:
 
 prep:
 	$(PYTHON) setup.py sdist --formats=gztar
+	cp boom-0.8.tar.gz dist/
 
 srpm: prep
 	rpmbuild -bs redhat-upgrade-tool.spec \

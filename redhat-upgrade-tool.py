@@ -21,11 +21,13 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os
+import re
+import shlex
 import sys, time, platform, shutil, signal
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError
 
-from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
+from redhat_upgrade_tool.util import call, check_call, check_output, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
@@ -141,8 +143,107 @@ def check_preupg_target_system_version(treeinfo):
         raise SystemExit(1)
 
 
+def create_snapshot(root_lv, snap_name, snap_size=None):
+    # TODO: add possibility to create more snapshots
+    size_opt, size = ("-l", "100%ORIGIN") if snap_size is None else ("--size", snap_size)
+    cmd = [
+        "lvcreate",
+        size_opt, size,
+        "--snapshot",
+        "--name", snap_name,
+        root_lv
+    ]
+    try:
+        check_call(cmd)
+    except CalledProcessError:
+        return
+    root_vg = os.path.split(root_lv)[0]
+    return os.path.join(root_vg, snap_name)
+
+
+def create_boot_entry(title, os_profile, root_lv):
+    cmd = [
+        "boom", "create",
+        "--profile", os_profile,
+        "--title", title,
+        "--root-lv", root_lv
+    ]
+    try:
+        check_call(cmd)
+    except CalledProcessError as e:
+        if not "Entry already exists" in e.output:
+            return False
+    return True
+
+
+def clear_boot_entries(os_profile):
+    cmd = [
+        "boom", "delete",
+        "--profile", os_profile
+    ]
+    try:
+        check_call(cmd)
+    except CalledProcessError as e:
+        return False
+    return True
+
+
+def backup_boot_files():
+    release = platform.release()
+    formats = [
+        "initramfs-{0}.img",
+        "vmlinuz-{0}",
+        "System.map-{0}",
+        "symvers-{0}.gz",
+        "config-{0}",
+    ]
+    for fmt in formats:
+        src = os.path.join("/boot", fmt.format(release))
+        dst = os.path.join("/boot", fmt.format("snapshot"))
+        shutil.copy2(src, dst)
+
+
+def change_boot_entry():
+    GRUB_CFG = "/boot/grub/menu.lst"
+    with open(GRUB_CFG, "r") as fd:
+        lines = fd.read()
+    with open(GRUB_CFG, "a") as fd:
+        pattern = r"#--- BOOM_Grub1_BEGIN ---(.+?)#--- BOOM_Grub1_END ---"
+        regex = re.compile(pattern, re.DOTALL)
+        entries = [x.strip() for x in regex.findall(lines) if x.strip()]
+        if not entries:
+            return False
+        fd.write("\ntitle RUT Snapshots\n")
+        for entry in entries:
+            fd.write("\n#--- RUT_Grub1_BEGIN ---\n")
+            fd.write(re.sub(platform.release(), "snapshot", entry))
+            fd.write("\n#--- RUT_Grub1_END ---\n")
+    return True
+
+
 def main(args):
     global major_upgrade
+
+    if args.snapshot_root_lv:
+        if not args.snapshot_name:
+            log.error(_("Error: snapshot name and size need to be specified."))
+            raise SystemExit(1)
+
+        if not create_snapshot(args.snapshot_root_lv, args.snapshot_name, args.snapshot_size):
+            log.error(_("Error: could not take snapshot."))
+            raise SystemExit(1)
+
+        # TODO: this is hard-coded for RHEL 6 for now
+        os_profile = "98c3edb"
+        snap_lv = os.path.join(os.path.split(args.snapshot_root_lv)[0], args.snapshot_name)
+        if not create_boot_entry("RHEL 6 Snapshot", os_profile, snap_lv):
+            log.error(_("Error: could not create a boot entry for the snapshot."))
+            raise SystemExit(1)
+
+        backup_boot_files()
+        if not change_boot_entry():
+            log.error(_("Error: could not change boot entry created by boom."))
+            raise SystemExit(1)
 
     if args.clean:
         do_cleanup(args)

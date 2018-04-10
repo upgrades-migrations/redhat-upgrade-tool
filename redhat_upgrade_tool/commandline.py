@@ -54,6 +54,17 @@ def parse_args(gui=False):
         help=_('automatically reboot to start the upgrade when ready'))
 
 
+    # === LVM snapshot options ===
+    p.add_option('--snapshot-root-lv', metavar='VOLUME',
+        type="str",  # TODO create correct type
+        help=_('specify the snapshot partition from which the snapshot will be taken'))
+    p.add_option('--snapshot-name', metavar='NAME',
+        type="str",  # TODO create correct type
+        help=_('specify the snapshot name'))
+    p.add_option('--snapshot-size', metavar='SIZE',
+        type="str", help=_('specify the snapshot size, according to lvmcreate --size'))
+
+
     # === hidden options. FOR DEBUGGING ONLY. ===
     p.add_option('--skippkgs', action='store_true', default=False,
         help=optparse.SUPPRESS_HELP)
