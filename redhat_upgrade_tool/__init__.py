@@ -69,6 +69,5 @@ preupgrade_script_path = os.path.join(preupgrade_dir, 'preupgrade-scripts')
 release_version_file = os.path.join(preupgrade_dir, preupgrade_script_path, 'release_version')
 grub_conf_file = "/boot/grub/grub.conf"
 snapshot_metadata_file = "/boot/grub/snapshot.metadata"
-rhelup_cron_file = "/etc/cron.d/redhat_upgrade_tool"
 
 MIN_AVAIL_BYTES_FOR_BOOT = 50 * 2**20  # 50 MiB

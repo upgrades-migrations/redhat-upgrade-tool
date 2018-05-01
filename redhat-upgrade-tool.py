@@ -32,6 +32,7 @@ from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_pl
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
+from redhat_upgrade_tool.snapshots import LVM
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -42,7 +43,6 @@ from redhat_upgrade_tool import preupgrade_script_path
 from redhat_upgrade_tool import release_version_file
 from redhat_upgrade_tool import _, kernelpath, initrdpath
 from redhat_upgrade_tool import grub_conf_file
-from redhat_upgrade_tool import rhelup_cron_file
 from redhat_upgrade_tool import snapshot_metadata_file
 from redhat_upgrade_tool import MIN_AVAIL_BYTES_FOR_BOOT
 
@@ -146,85 +146,6 @@ def check_preupg_target_system_version(treeinfo):
         raise SystemExit(1)
 
 
-def create_snapshot(lv, snap_name, snap_size=''):
-    # create snapshot of chosen partitions and create metadata file
-    # which contains information which snapshots have been created during the
-    # operation
-    # TODO: add possibility to create more snapshots
-    size_opt, size = ("-l", "100%ORIGIN") if not snap_size else ("--size", snap_size)
-    cmd = [
-        "lvcreate",
-        size_opt, size,
-        "--snapshot",
-        "--name", snap_name,
-        lv
-    ]
-    try:
-        check_call(cmd)
-    except CalledProcessError:
-        return
-
-    # store the metadata about the created snapshot
-    # TODO: create class for managing of snaphots
-    # TODO: support multiple snapshots
-    snapshot_name = args.snapshot_root_lv + "/" + args.snapshot_name
-    snapshot_metadata = RawConfigParser()
-    snapshot_metadata.add_section("snapshot")
-    snapshot_metadata.set("snapshot", "snapshot_root_lv", args.snapshot_root_lv)
-    snapshot_metadata.set("snapshot", "snapshot_name", snapshot_name)
-    snapshot_metadata.set("snapshot", "snapshot_size", args.snapshot_size)
-    with open(snapshot_metadata_file, "wb") as fhandle:
-        snapshot_metadata.write(fhandle)
-
-    vg = os.path.split(lv)[0]
-    return os.path.join(vg, snap_name)
-
-
-def restore_snapshot(snapshot_name):
-    cmd = ["lvconvert", "--merge", snapshot_name]
-    try:
-        check_call(cmd)
-    except CalledProcessError:
-        return
-
-
-def restore_snapshots():
-    # restore all snapshots
-    #TODO: support multiple snapshots
-    snapshot_metadata = RawConfigParser()
-    snapshot_metadata.read(snapshot_metadata_file)
-    snapshot_name = snapshot_metadata.get("snapshot", "snapshot_name")
-    restore_snapshot(snapshot_name)
-
-
-def remove_snapshot(snapshot):
-    cmd = ["lvremove", "-f", snap_name]
-    try:
-        check_call(cmd)
-    except CalledProcessError:
-        return
-
-
-def remove_created_snapshots():
-    # remove snapshots created by redhat-upgrade-tool
-    #TODO: support multiple snapshots
-    #TODO: handle missing data in the metadata file?
-    snapshot_metadata = RawConfigParser()
-    snapshot_metadata.read(snapshot_metadata_file)
-    snapshot_name = snapshot_metadata.get("snapshot", "snapshot_name")
-    remove_snapshot(snapshot_name)
-
-def autoremove_snapshots():
-    # remove all created snapshots after reboot
-    with open(rhelup_cron_file, "wb") as cron_file:
-        content = ( "SHELL=/bin/bash\n"
-                    "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n"
-                    "HOME=/\n"
-                    "@reboot /bin/redhat-upgrade-tool --clean-snapshots\n"
-                  )
-        cron_file.write(content)
-
-
 def create_boot_entry(title, os_profile, root_lv):
     cmd = [
         "boom", "create",
@@ -288,6 +209,7 @@ def change_boot_entry():
             fd.write("\n#--- RUT_Grub1_END ---\n")
     return True
 
+
 def restore_boot():
     # TODO: remove backed up files after restore
     release = platform.release()
@@ -307,12 +229,12 @@ def restore_boot():
 
 def main(args):
     global major_upgrade
+    lvm = LVM(args.snapshot_root_lv, args.snapshot_lv, conf_path=snapshot_metadata_file)
 
     if args.system_restore:
         # TODO: .... add checks, exceptions, ....
-        restore_snapshots()
+        lvm.restore_snapshots()
         restore_boot()
-        autoremove_snapshots()
 
         if args.reboot:
             reboot()
@@ -322,29 +244,18 @@ def main(args):
         return
 
     if args.clean_snapshots:
-        remove_created_snapshots()
+        lvm.remove_snapshots()
+        return
 
-
-    # Create lvm snapshots if snapshot-root-lv or snapshot-lv is passed
-    # TODO: warn user if system is not using LVM but snapshot option was added
-    # TODO: refactoring, move it to different class and change logic
-    for i, (lv_path, snap_name, snap_size) in enumerate(args.snapshot_lv):
-        if not create_snapshot(lv_path, snap_name, snap_size):
-            for lv_path, snap_name, snap_size in list(args.snapshot_lv)[:i]:
-                path = os.path.join(os.path.split(lv_path)[0], snap_name)
-                remove_snapshot(path)
-            log.error(_("Error: could not take snapshot, removing all created"))
-            raise SystemExit(1)
-
-    if len(args.snapshot_root_lv):
+    lvm.create_snapshots()
+    root_snapshot = lvm.get_root_snapshot()
+    if root_snapshot is not None and root_snapshot.exists:
         # TODO: this is hard-coded for RHEL 6 for now
         os_profile = "98c3edb"
-
         # back up boot files & grub.conf before we touch the grub
         backup_boot_files()
 
-        root_snap_lv = os.path.join(os.path.split(args.snapshot_root_lv[0])[0], args.snapshot_root_lv[1])
-        if not create_boot_entry("RHEL 6 Snapshot", os_profile, root_snap_lv):
+        if not create_boot_entry("RHEL 6 Snapshot", os_profile, root_snapshot.lv):
             log.error(_("Error: could not create a boot entry for the snapshot."))
             raise SystemExit(1)
 
