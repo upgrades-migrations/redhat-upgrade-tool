@@ -48,6 +48,17 @@ Write debugging output to the given file. Defaults to '/var/log/redhat-upgrade-t
 *--reboot*::
 Automatically reboot to start the upgrade when ready.
 
+*--snapshot-lv* 'VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]'::
+Specify the LVM logical volume from which a snapshot should be taken before
+performing the system upgrade.
+
+*--snapshot-root-lv* 'VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]'::
+Same as *--snapshot-lv*, but additionally creates a new *Grub* menu entry to allow
+the user to boot into the snapshot volume recently created.
+
+*--system-restore*::
+Restore system from previously created snapshots.
+
 
 SOURCE
 ~~~~~~
@@ -96,6 +107,9 @@ Cleanup commands
 *--resetbootloader*::
 Remove any modifications made to the bootloader configuration.
 
+*--clean-snapshots*::
+Clean up snapshots that were previously created.
+
 *--clean*::
 Clean up everything written by *redhat-upgrade-tool*.
 
@@ -106,6 +120,14 @@ EXAMPLES
 
 Upgrade to RHEL 7.0 by downloading all needed packages and data from the
 specified repository.
+
+*redhat-upgrade-tool --network 7.0 --instrepo <repo URL> --snapshot-root-lv
+vg/lv_root:snap_root:5G --snapshot-lv vg/lv_var*
+
+Same as above, but first takes a snapshot from logical volumes 'vg/lv_root' and
+'vg/lv_var'. For 'vg/lv_root' the snapshot name will be named 'snap_root' and its
+size will be '5G'. Also, a new *Grub* menu entry, that allows booting into the
+snapshot taken from 'vg/lv_root', is created.
 
 *redhat-upgrade-tool --device*
 

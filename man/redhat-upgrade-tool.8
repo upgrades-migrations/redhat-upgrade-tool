@@ -2,12 +2,12 @@
 .\"     Title: redhat-upgrade-tool
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 11/08/2017
+.\"      Date: 05/16/2018
 .\"    Manual: redhat-upgrade-tool User Manual
 .\"    Source: redhat-upgrade-tool
 .\"  Language: English
 .\"
-.TH "REDHAT\-UPGRADE\-TOO" "8" "11/08/2017" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Man"
+.TH "REDHAT\-UPGRADE\-TOO" "8" "05/16/2018" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Man"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -68,6 +68,24 @@ Write debugging output to the given file\&. Defaults to
 \fB\-\-reboot\fR
 .RS 4
 Automatically reboot to start the upgrade when ready\&.
+.RE
+.PP
+\fB\-\-snapshot\-lv\fR \fIVOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]\fR
+.RS 4
+Specify the LVM logical volume from which a snapshot should be taken before performing the system upgrade\&.
+.RE
+.PP
+\fB\-\-snapshot\-root\-lv\fR \fIVOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]\fR
+.RS 4
+Same as
+\fB\-\-snapshot\-lv\fR, but additionally creates a new
+\fBGrub\fR
+menu entry to allow the user to boot into the snapshot volume recently created\&.
+.RE
+.PP
+\fB\-\-system\-restore\fR
+.RS 4
+Restore system from previously created snapshots\&.
 .RE
 .SS "SOURCE"
 .sp
@@ -133,6 +151,11 @@ images\&.
 Remove any modifications made to the bootloader configuration\&.
 .RE
 .PP
+\fB\-\-clean\-snapshots\fR
+.RS 4
+Clean up snapshots that were previously created\&.
+.RE
+.PP
 \fB\-\-clean\fR
 .RS 4
 Clean up everything written by
@@ -143,6 +166,10 @@ Clean up everything written by
 \fBredhat\-upgrade\-tool \-\-network 7\&.0 \-\-instrepo <repo URL>\fR
 .sp
 Upgrade to RHEL 7\&.0 by downloading all needed packages and data from the specified repository\&.
+.sp
+\fBredhat\-upgrade\-tool \-\-network 7\&.0 \-\-instrepo <repo URL> \-\-snapshot\-root\-lv vg/lv_root:snap_root:5G \-\-snapshot\-lv vg/lv_var\fR
+.sp
+Same as above, but first takes a snapshot from logical volumes \fIvg/lv_root\fR and \fIvg/lv_var\fR\&. For \fIvg/lv_root\fR the snapshot name will be named \fIsnap_root\fR and its size will be \fI5G\fR\&. Also, a new \fBGrub\fR menu entry, that allows booting into the snapshot taken from \fIvg/lv_root\fR, is created\&.
 .sp
 \fBredhat\-upgrade\-tool \-\-device\fR
 .sp

@@ -32,7 +32,7 @@ from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_pl
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
-from redhat_upgrade_tool.snapshots import LVM
+from redhat_upgrade_tool.snapshots import LVM, SnapshotError
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -156,14 +156,11 @@ def create_boot_entry(title, os_profile, root_lv):
     try:
         check_call(cmd)
     except CalledProcessError as e:
-        if not "Entry already exists" in e.output:
-            return False
+        return False
     return True
 
 
-# FIXME: replace this one by recover_boot_config, it should remove even the
-#        metadata created by the boom
-def clear_boot_entries(os_profile):
+def boom_cleanup(os_profile):
     cmd = [
         "boom", "delete",
         "--profile", os_profile
@@ -211,7 +208,6 @@ def change_boot_entry():
 
 
 def restore_boot():
-    # TODO: remove backed up files after restore
     release = platform.release()
     formats = [
         "initramfs-{0}.img",
@@ -223,17 +219,26 @@ def restore_boot():
     for fmt in formats:
         src = os.path.join("/boot", fmt.format("snapshot"))
         dst = os.path.join("/boot", fmt.format(release))
-        shutil.copy2(src, dst)
-    shutil.copy2("%s.preupg" % grub_conf_file, grub_conf_file)
+        shutil.move(src, dst)
+    shutil.move("%s.preupg" % grub_conf_file, grub_conf_file)
 
 
 def main(args):
     global major_upgrade
-    lvm = LVM(args.snapshot_root_lv, args.snapshot_lv, conf_path=snapshot_metadata_file)
+
+    try:
+        lvm = LVM(args.snapshot_root_lv, args.snapshot_lv, conf_path=snapshot_metadata_file)
+    except SnapshotError as exc:
+        print _(exc)
+        raise SystemExit(1)
+
+    # TODO: this is hard-coded for RHEL 6 for now
+    os_profile = "98c3edb"
 
     if args.system_restore:
         # TODO: .... add checks, exceptions, ....
         lvm.restore_snapshots()
+        boom_cleanup(os_profile)
         restore_boot()
 
         if args.reboot:
@@ -245,13 +250,12 @@ def main(args):
 
     if args.clean_snapshots:
         lvm.remove_snapshots()
+        boom_cleanup(os_profile)
         return
 
     lvm.create_snapshots()
     root_snapshot = lvm.get_root_snapshot()
     if root_snapshot is not None and root_snapshot.exists:
-        # TODO: this is hard-coded for RHEL 6 for now
-        os_profile = "98c3edb"
         # back up boot files & grub.conf before we touch the grub
         backup_boot_files()
 

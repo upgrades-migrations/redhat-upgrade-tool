@@ -56,10 +56,10 @@ def parse_args(gui=False):
 
     # === LVM snapshot options ===
     # in case of adding short option remember to edit add_logical_volume func
-    p.add_option('--snapshot-root-lv', metavar='VOLUME', default=[],
+    p.add_option('--snapshot-root-lv', metavar='VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]', default=[],
         type="logical_volume", action="callback", callback=add_logical_volume,
         help=_('specify the snapshot partition from which the snapshot will be taken'))
-    p.add_option('--snapshot-lv', metavar='VOLUME',
+    p.add_option('--snapshot-lv', metavar='VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]',
         type="logical_volume", action="callback", callback=add_logical_volume,
         help=_('specify the snapshots partitions from which the snapshots will be taken'))
     p.set_defaults(snapshot_lv=set())
