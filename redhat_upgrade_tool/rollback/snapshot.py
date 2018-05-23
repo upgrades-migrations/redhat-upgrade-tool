@@ -1,8 +1,18 @@
 import os
-import ast
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, call
 from ConfigParser import RawConfigParser, DuplicateSectionError
-from .util import check_call
+
+try:
+    from redhat_upgrade_tool.util import check_call
+except ImportError:
+    def check_call(*popenargs, **kwargs):
+        retcode = call(*popenargs, **kwargs)
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise CalledProcessError(retcode, cmd)
+        return 0
 
 
 # this is not Red Hat Upgrade tool style
@@ -84,7 +94,7 @@ class LVM(object):
 
     def _add_snapshot(self, obj):
         lv = repr(obj)
-        if not lv in self.snapshots:
+        if lv not in self.snapshots:
             self.snapshots[lv] = obj
         # it's possible to indicate new root partition
         # obj == self.snapshots[lv] is checking only origin_lv, name and size without root
@@ -112,7 +122,8 @@ class LVM(object):
     # path, name
     def get_root_snapshot(self):
         for snapshot in self.snapshots.values():
-            return snapshot if snapshot.root else None
+            if snapshot.root:
+                return snapshot
 
     def create_snapshots(self):
         for snapshot in self.snapshots.values():
@@ -208,4 +219,3 @@ class Snapshot(object):
         else:
             self.exists = False
             return True
-

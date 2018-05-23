@@ -142,6 +142,10 @@ def parse_args(gui=False):
     if not (gui or args_source or args.clean or args.clean_snapshots or args.system_restore):
         p.error(_('SOURCE is required (--network, --device, --iso)'))
 
+    # do not allow use snapshot-lv without snapshot-root-lv param
+    if args.snapshot_lv and not args.snapshot_root_lv:
+        p.error(_('--snapshot-root-lv is required with option --snapshot-lv'))
+
     # allow --instrepo URL as shorthand for --repourl REPO=URL --instrepo REPO
     if args.instrepo and '://' in args.instrepo:
         args.repos.append(('add', 'cmdline-instrepo=%s' % args.instrepo))
@@ -158,6 +162,11 @@ def parse_args(gui=False):
         if args.clean:
             args.resetbootloader = True
 
+    # check if given values are not available options
+    for key, val in args.__dict__.items():
+        if isinstance(val, str) and p.has_option(val):
+            p.error(_('param "%s" has value "%s" which is one of the available option, change to correct value' %
+                (key, val)))
     return args
 
 def repoaction(option, opt_str, value, parser, *args, **kwargs):
