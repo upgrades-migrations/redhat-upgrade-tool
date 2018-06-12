@@ -42,6 +42,9 @@ Print more info.
 *-d*, *--debug*::
 Print lots of debugging info.
 
+*--force*::
+Continue even if the Preupgrade Assistant risk check fails. Use it at your own risk.
+
 *--debuglog* 'DEBUGLOG'::
 Write debugging output to the given file. Defaults to '/var/log/redhat-upgrade-tool.log'.
 
