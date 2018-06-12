@@ -304,7 +304,7 @@ def main(args):
     # installation during the upgrade.
     statvfs = os.statvfs("/boot")
     avail_bytes = statvfs.f_frsize * statvfs.f_bavail
-    if avail_bytes < MIN_AVAIL_BYTES_FOR_BOOT:
+    if not args.no_space_check and avail_bytes < MIN_AVAIL_BYTES_FOR_BOOT:
         reset_boot()
         additional_mib_needed = \
             (MIN_AVAIL_BYTES_FOR_BOOT - avail_bytes) / 2**20
