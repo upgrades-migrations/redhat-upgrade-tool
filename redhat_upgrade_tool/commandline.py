@@ -43,7 +43,8 @@ def parse_args(gui=False):
     p.set_defaults(loglevel=logging.WARNING)
 
     p.add_option('-f', '--force', action='store_true', default=False,
-            help=_('continue even if preupgrade-assistant risk check fails'))
+            help=_('continue even if the Preupgrade Assistant risk check'
+                   'fails. Use it at your own risk.'))
     p.add_option('--cleanup-post', action='store_true', default=False,
             help=_('cleanup old package after the upgrade'))
 
