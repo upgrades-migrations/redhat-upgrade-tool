@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 import platform
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, call
 
 try:
     from redhat_upgrade_tool import grub_conf_file
@@ -81,8 +81,7 @@ def change_boot_entry():
     return True
 
 
-def restore_boot():
-    release = platform.release()
+def restore_boot(release=platform.release()):
     for fmt in _SNAP_BOOT_FILES:
         src = os.path.join("/boot", fmt.format("snapshot"))
         dst = os.path.join("/boot", fmt.format(release))

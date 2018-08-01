@@ -137,6 +137,8 @@ def parse_args(gui=False):
             help=optparse.SUPPRESS_HELP)
 
     args, _leftover = p.parse_args()
+    if _leftover:
+        p.error(_('argument left overs detected, check if you are passing correct values to options'))
 
     args_source = args.network or args.device or args.iso
     if not (gui or args_source or args.clean or args.clean_snapshots or args.system_restore):

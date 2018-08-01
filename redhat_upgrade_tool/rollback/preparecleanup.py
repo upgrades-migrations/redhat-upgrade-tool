@@ -20,16 +20,27 @@
 import json
 import os
 import shutil
+import subprocess
+import platform
 from redhat_upgrade_tool.util import mkdir_p
 from redhat_upgrade_tool.rollback.bootloader import _SNAP_BOOT_FILES
 
 
 def create_cleanup_script():
+    rollback_dst = '/boot/rollback'
     if not os.path.isdir('/boot/manualcleanup'):
         mkdir_p('/boot/manualcleanup')
 
     rollback_path = os.path.dirname(os.path.abspath(__file__))
-    shutil.copytree(rollback_path, '/boot/rollback')
+    if os.path.exists(rollback_dst):
+        shutil.rmtree(rollback_dst)
+    shutil.copytree(rollback_path, rollback_dst)
+
+    with open(os.path.join(rollback_dst, '.active-kernel'), 'w') as active_kernel:
+        active_kernel.write(platform.release())
+
+    with open(os.path.join(rollback_dst, '.all-kernels'), 'w') as all_kernels:
+        all_kernels.write(subprocess.Popen(["rpm", "-qa", "kernel"], stdout=subprocess.PIPE).communicate()[0])
 
     dump_snapshot_boot_files()
 
