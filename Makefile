@@ -1,6 +1,7 @@
 PYTHON=python
-VERSION=0.7.51
+VERSION=0.8
 RPMDIR_PATH=${PWD}
+
 
 all: build
 

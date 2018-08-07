@@ -24,6 +24,7 @@ from . import media
 from . import packagedir
 from .sysprep import reset_boot, remove_boot, remove_cache, misc_cleanup
 from . import _
+from . import MIN_AVAIL_BYTES_FOR_BOOT
 
 import logging
 log = logging.getLogger(__package__)
@@ -43,7 +44,13 @@ def parse_args(gui=False):
     p.set_defaults(loglevel=logging.WARNING)
 
     p.add_option('-f', '--force', action='store_true', default=False,
-            help=_('continue even if preupgrade-assistant risk check fails'))
+            help=_('continue even if the Preupgrade Assistant risk check'
+                   'fails. Use it at your own risk.'))
+
+    p.add_option('--no-space-check', action='store_true', default=False,
+                 help=_('disable check of free space in /boot. By default the'
+                        ' required minimum before reboot is 50 MiB. Use it at'
+                        ' your own risk.'))
     p.add_option('--cleanup-post', action='store_true', default=False,
             help=_('cleanup old package after the upgrade'))
 

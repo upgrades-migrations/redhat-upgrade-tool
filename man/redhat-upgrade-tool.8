@@ -7,6 +7,7 @@
 .\"    Source: redhat-upgrade-tool
 .\"  Language: English
 .\"
+
 .TH "REDHAT\-UPGRADE\-TOO" "8" "05/16/2018" "redhat\-upgrade\-tool" "redhat\-upgrade\-tool User Man"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
@@ -57,6 +58,16 @@ Print more info\&.
 \fB\-d\fR, \fB\-\-debug\fR
 .RS 4
 Print lots of debugging info\&.
+.RE
+.PP
+\fB\-\-force\fR
+.RS 4
+Continue even if the Preupgrade Assistant risk check fails\&. Use it at your own risk\&.
+.RE
+.PP
+\fB\-\-no\-space\-check\fR
+.RS 4
+Disable check of free space in /boot\&. By default the required minimum before reboot is 50 MiB\&. Use it at your own risk\&.
 .RE
 .PP
 \fB\-\-debuglog\fR \fIDEBUGLOG\fR

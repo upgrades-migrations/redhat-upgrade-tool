@@ -3,7 +3,7 @@
 %global name_subpkg modules
 
 Name:           redhat-upgrade-tool
-Version:        0.7.51
+Version:        0.7.52
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -150,6 +150,10 @@ fi
 
 
 %changelog
+* Tue Jun 12 2018 Michal Bocek <mbocek@redhat.com> - 1:0.7.52-1
+- Add option to disable /boot size check
+  Resolves: rhbz#1518317
+
 * Mon Nov 08 2017 Michal Bocek <mbocek@redhat.com> - 1:0.7.51-1
 - Remove dependency on preupgrade-assistant-el6toel7 package
 - Fail with proper error message when .treeinfo is not available
