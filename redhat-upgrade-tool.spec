@@ -13,15 +13,20 @@ URL:            https://github.com/upgrades-migrations/redhat-upgrade-tool
 Source0:        %{url}/archive/%{name}-%{version}.tar.gz
 Source1:        boom-%{version_boom}.tar.gz
 
+Requires:       dbus
 Requires:       grubby
 Requires:       python-rhsm
+Requires:       python-argparse
 Requires:       preupgrade-assistant >= 2.2.0-1
-Requires:       %{name}-%{name_subpkg}
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1038299
 Requires:       yum >= 3.2.29-43
 
 BuildRequires:  python-libs
+BuildRequires:  python2-devel
+BuildRequires:  python-sphinx
+BuildRequires:  python-setuptools
+
 BuildArch:      noarch
 
 # GET THEE BEHIND ME, SATAN
@@ -30,18 +35,6 @@ Obsoletes:      preupgrade
 %description
 redhat-upgrade-tool is the Red Hat Enterprise Linux Upgrade tool.
 
-%package %{name_subpkg}
-Summary: modules for redhat-upgrade-tool to support rollbacks
-Buildarch: noarch
-BuildRequires: python2-devel
-BuildRequires: python-sphinx
-BuildRequires: python-setuptools
-
-Requires: python-argparse
-Requires: dbus
-
-%description %{name_subpkg}
-%{summary}
 
 
 %prep
@@ -100,14 +93,25 @@ popd
 # cleaning ...
 #rm -f ${RPM_BUILD_ROOT}/%{_bindir}/boom
 
-%post %{name_subpkg}
+%post
 if [ ! -e /var/lib/dbus/machine-id ]; then
     dbus-uuidgen > /var/lib/dbus/machine-id
 fi
 
 
 %files
+%{!?_licensedir:%global license %%doc}
 %doc README.asciidoc COPYING
+
+# boom doc files
+%license %{boom_dir}/COPYING
+%doc %{boom_dir}/README.md
+%doc %{_mandir}/man*/boom.*
+%if 0%{?sphinx_docs}
+%doc doc/html/
+%endif # if sphinx_docs
+%doc %{boom_dir}/examples/*
+
 # systemd stuff
 %if 0%{?_unitdir:1}
 %{_unitdir}/system-upgrade.target
@@ -131,15 +135,7 @@ fi
 # empty updates dir
 %dir /etc/redhat-upgrade-tool/update.img.d
 
-%files %{name_subpkg}
-%{!?_licensedir:%global license %%doc}
-%license %{boom_dir}/COPYING
-%doc %{boom_dir}/README.md
-%doc %{_mandir}/man*/boom.*
-%if 0%{?sphinx_docs}
-%doc doc/html/
-%endif # if sphinx_docs
-%doc %{boom_dir}/examples/*
+# boom
 %{python_sitelib}/boom*
 %{_bindir}/boom
 /etc/grub.d/42_boom
