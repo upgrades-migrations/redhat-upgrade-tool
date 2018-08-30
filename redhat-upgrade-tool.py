@@ -21,15 +21,21 @@
 # Author: Will Woods <wwoods@redhat.com>
 
 import os
+import re
+import shlex
 import sys, time, platform, shutil, signal
 from subprocess import CalledProcessError, Popen, PIPE
-from ConfigParser import NoOptionError
+from ConfigParser import NoOptionError, RawConfigParser
 
-from redhat_upgrade_tool.util import call, check_call, rm_f, mkdir_p, rlistdir
+from redhat_upgrade_tool.util import call, check_call, check_output, rm_f, mkdir_p, rlistdir
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
+from redhat_upgrade_tool.rollback import snapshot_metadata_file, rhel6_profile
+from redhat_upgrade_tool.rollback.bootloader import boom_cleanup, restore_boot, create_boot_entry, restore_grub_conf, backup_boot_files, change_boot_entry, clean_snapshot_boot_files
+from redhat_upgrade_tool.rollback.snapshot import LVM, SnapshotError
+from redhat_upgrade_tool.rollback.preparecleanup import create_cleanup_script
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -39,6 +45,7 @@ from redhat_upgrade_tool import rhel_gpgkey_path
 from redhat_upgrade_tool import preupgrade_script_path
 from redhat_upgrade_tool import release_version_file
 from redhat_upgrade_tool import _, kernelpath, initrdpath
+from redhat_upgrade_tool import grub_conf_file
 from redhat_upgrade_tool import MIN_AVAIL_BYTES_FOR_BOOT
 
 import redhat_upgrade_tool.logutils as logutils
@@ -140,12 +147,87 @@ def check_preupg_target_system_version(treeinfo):
                 " only to the system version %s." % preupg_supported_sysver)
         raise SystemExit(1)
 
+def is_clean_safe(snapshots):
+    '''
+    Do not allow performing --clean and --clean-snapshots options when booted into RHEL 6 snapshot.
+    '''
+    if not snapshots:
+        return True
+    with open('/proc/cmdline') as cmdline:
+        res = re.search("root=(\S*)", cmdline.read())
+        if res is None:
+            print _("Error: unable to locate kernel root arg")
+            raise SystemExit(1)
+        root = res.group(1)
+        for snapshot in snapshots.values():
+            if root == snapshot.full_path:
+                return False
+    return True
+
 
 def main(args):
     global major_upgrade
 
+    try:
+        lvm = LVM(args.snapshot_root_lv, args.snapshot_lv, conf_path=snapshot_metadata_file)
+    except SnapshotError as exc:
+        print _(exc)
+        raise SystemExit(1)
+
+    if args.snapshot_root_lv:
+        create_cleanup_script()
+
+    if args.system_restore:
+        # TODO: .... add checks, exceptions, ....
+        lvm.restore_snapshots()
+        boom_cleanup(rhel6_profile)
+        restore_boot()
+
+        if args.reboot:
+            reboot()
+        else:
+            print _('Preparation for recovery finished.'
+                    ' Reboot to recover original system.')
+        return
+
+    if args.clean_snapshots:
+        if not is_clean_safe(lvm.snapshots):
+            print _("Error: cannot process --clean-snapshots option from booted snapshot, to rollback system use --system-restore option")
+            raise SystemExit(1)
+
+        lvm.remove_snapshots()
+        boom_cleanup(rhel6_profile)
+        clean_snapshot_boot_files()
+        restore_grub_conf()
+        return
+
+    if not lvm.create_snapshots():
+        print _("Error: could not create snapshot(s).")
+        raise SystemExit(1)
+
+    root_snapshot = lvm.get_root_snapshot()
+    if root_snapshot is not None and root_snapshot.exists:
+        # back up boot files & grub.conf before we touch the grub
+        backup_boot_files()
+
+        if not create_boot_entry("RHEL 6 Snapshot", rhel6_profile, root_snapshot.lv):
+            print _("Error: could not create a boot entry for the snapshot.")
+            raise SystemExit(1)
+
+        if not change_boot_entry():
+            print _("Error: could not change boot entry created by boom.")
+            raise SystemExit(1)
+
     if args.clean:
+        if not is_clean_safe(lvm.snapshots):
+            print _("Error: cannot process --clean option from snapshot, to rollback system use --system-restore option")
+            raise SystemExit(1)
+
         do_cleanup(args)
+        lvm.remove_snapshots()
+        boom_cleanup(rhel6_profile)
+        clean_snapshot_boot_files()
+        restore_grub_conf()
         return
     else:
         # Leaving cache from previous runs of the tool could foil the correct

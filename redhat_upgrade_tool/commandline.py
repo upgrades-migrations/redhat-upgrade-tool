@@ -61,6 +61,19 @@ def parse_args(gui=False):
         help=_('automatically reboot to start the upgrade when ready'))
 
 
+    # === LVM snapshot options ===
+    # in case of adding short option remember to edit add_logical_volume func
+    p.add_option('--snapshot-root-lv', metavar='VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]', default=[],
+        type="logical_volume", action="callback", callback=add_logical_volume,
+        help=_('specify the snapshot partition from which the snapshot will be taken'))
+    p.add_option('--snapshot-lv', metavar='VOLUME[:CUSTOM_SNAPSHOT_NAME[:SIZE]]',
+        type="logical_volume", action="callback", callback=add_logical_volume,
+        help=_('specify the snapshots partitions from which the snapshots will be taken'))
+    p.set_defaults(snapshot_lv=set())
+    p.add_option('--system-restore', action='store_true', default=False,
+        help=_('restore system from previously created snapshots'))
+
+
     # === hidden options. FOR DEBUGGING ONLY. ===
     p.add_option('--skippkgs', action='store_true', default=False,
         help=optparse.SUPPRESS_HELP)
@@ -120,6 +133,9 @@ def parse_args(gui=False):
         clean.add_option('--resetbootloader', action='store_const',
             dest='clean', const='bootloader', default=None,
             help=_('remove any modifications made to bootloader'))
+        clean.add_option('--clean-snapshots', action='store_true',
+            default=False,
+            help=_('clean up all previously created snapshots'))
         clean.add_option('--clean', action='store_const', const='all',
             help=_('clean up everything written by %s') % __package__)
         p.add_option('--expire-cache', action='store_true', default=False,
@@ -128,9 +144,16 @@ def parse_args(gui=False):
             help=optparse.SUPPRESS_HELP)
 
     args, _leftover = p.parse_args()
+    if _leftover:
+        p.error(_('argument left overs detected, check if you are passing correct values to options'))
 
-    if not (gui or args.network or args.device or args.iso or args.clean):
+    args_source = args.network or args.device or args.iso
+    if not (gui or args_source or args.clean or args.clean_snapshots or args.system_restore):
         p.error(_('SOURCE is required (--network, --device, --iso)'))
+
+    # do not allow use snapshot-lv without snapshot-root-lv param
+    if args.snapshot_lv and not args.snapshot_root_lv:
+        p.error(_('--snapshot-root-lv is required with option --snapshot-lv'))
 
     # allow --instrepo URL as shorthand for --repourl REPO=URL --instrepo REPO
     if args.instrepo and '://' in args.instrepo:
@@ -148,6 +171,11 @@ def parse_args(gui=False):
         if args.clean:
             args.resetbootloader = True
 
+    # check if given values are not available options
+    for key, val in args.__dict__.items():
+        if isinstance(val, str) and p.has_option(val):
+            p.error(_('param "%s" has value "%s" which is one of the available option, change to correct value' %
+                (key, val)))
     return args
 
 def repoaction(option, opt_str, value, parser, *args, **kwargs):
@@ -219,6 +247,30 @@ def gpgkeyfile(option, opt, value):
         raise optparse.OptionValueError(_("File is not a GPG key"))
     return 'file://' + os.path.abspath(arg)
 
+def logical_volume(option, opt, value):
+    '''
+    Check if given snapshot-lv or snapshot-root-lv arguments are valid
+    and return tuple (lv-path, snap-name, snap-size)
+    Allowed arguments are:
+        <lv-path>
+        <lv-path>:<snap-name>:<snap-size>
+        <lv-path>:<snap-name>
+        <lv-path>::<snap-size>
+    '''
+    max_elem = 3
+    params = value.split(':', max_elem - 1)
+    # TODO: check if path exists and if it's volume
+    if len(params) < max_elem:
+        params.extend([''] * (max_elem - len(params)))
+    if not params[1]:
+        params[1] = 'snap_' + os.path.split(params[0])[1]
+    return tuple(params)
+
+def add_logical_volume(option, opt, value, parser):
+    parser.values.snapshot_lv.add(value)
+    if str(option) == "--snapshot-root-lv":
+        parser.values.snapshot_root_lv = value
+
 def RELEASEVER(option, opt, value):
     if value.lower() == 'rawhide':
         return 'rawhide'
@@ -244,13 +296,14 @@ def RELEASEVER(option, opt, value):
 
 class Option(optparse.Option):
     TYPES = optparse.Option.TYPES + \
-        ("device_or_mnt", "isofile", "RELEASEVER", "gpgkeyfile")
+        ("device_or_mnt", "isofile", "RELEASEVER", "gpgkeyfile", "logical_volume")
     TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
 
     TYPE_CHECKER["device_or_mnt"] = device_or_mnt
     TYPE_CHECKER["isofile"] = isofile
     TYPE_CHECKER["RELEASEVER"] = RELEASEVER
     TYPE_CHECKER["gpgkeyfile"] = gpgkeyfile
+    TYPE_CHECKER["logical_volume"] = logical_volume
 
 def do_cleanup(args):
     # FIXME: This installs RHSM product id certificates in case that

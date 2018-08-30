@@ -72,7 +72,7 @@ setup(name="redhat-upgrade-tool",
       url="https://github.com/dashea/redhat-upgrade-tool",
       download_url="https://github.com/dashea/redhat-upgrade-tool/downloads",
       license="GPLv2+",
-      packages=["redhat_upgrade_tool"],
+      packages=["redhat_upgrade_tool", "redhat_upgrade_tool.rollback"],
       scripts=["redhat-upgrade-tool.py"],
       cmdclass={
         'gettext': Gettext,

@@ -1,3 +1,7 @@
+%global version_boom 0.8
+%global boom_dir boom-%{version_boom}
+%global name_subpkg modules
+
 Name:           redhat-upgrade-tool
 Version:        0.7.52
 Release:        1%{?dist}
@@ -7,10 +11,12 @@ Epoch:          1
 License:        GPLv2+
 URL:            https://github.com/upgrades-migrations/redhat-upgrade-tool
 Source0:        %{url}/archive/%{name}-%{version}.tar.gz
+Source1:        boom-%{version_boom}.tar.gz
 
 Requires:       grubby
 Requires:       python-rhsm
 Requires:       preupgrade-assistant >= 2.2.0-1
+Requires:       %{name}-%{name_subpkg}
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1038299
 Requires:       yum >= 3.2.29-43
@@ -24,12 +30,34 @@ Obsoletes:      preupgrade
 %description
 redhat-upgrade-tool is the Red Hat Enterprise Linux Upgrade tool.
 
+%package %{name_subpkg}
+Summary: modules for redhat-upgrade-tool to support rollbacks
+Buildarch: noarch
+BuildRequires: python2-devel
+BuildRequires: python-sphinx
+BuildRequires: python-setuptools
+
+Requires: python-argparse
+Requires: dbus
+
+%description %{name_subpkg}
+%{summary}
+
 
 %prep
 %setup -q -n %{name}-%{version}
+%setup -q -T -D -a 1 -n %{name}-%{version}
+
 
 %build
 make PYTHON=%{__python}
+
+###### boom #######
+pushd %{boom_dir}
+CFLAGS="%{optflags}"
+%{__python} setup.py %{?py_setup_args} build --executable="%{__python} -s"
+popd
+
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -40,6 +68,42 @@ ln -sf redhat-upgrade-tool.8 $RPM_BUILD_ROOT/%{_mandir}/man8/redhat-upgrade-tool
 # updates dir
 mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 
+###### boom #######
+pushd %{boom_dir}
+%{__python} setup.py %{?py_setup_args} install -O1 --skip-build --root %{buildroot}
+
+# Install Grub2 integration scripts
+mkdir -p ${RPM_BUILD_ROOT}/etc/grub.d
+mkdir -p ${RPM_BUILD_ROOT}/etc/default
+install -m 755 etc/grub.d/42_boom ${RPM_BUILD_ROOT}/etc/grub.d
+install -m 644 etc/default/boom ${RPM_BUILD_ROOT}/etc/default
+
+# Make configuration directories
+# NOTE: think about remove of examples completely..
+mkdir -p ${RPM_BUILD_ROOT}/boot/boom/profiles
+mkdir -p ${RPM_BUILD_ROOT}/boot/loader/entries
+install -d -m 750 ${RPM_BUILD_ROOT}/boot/boom/profiles ${RPM_BUILD_ROOT}
+install -d -m 750 ${RPM_BUILD_ROOT}/boot/loader/entries ${RPM_BUILD_ROOT}
+install -m 644 examples/profiles/*.profile ${RPM_BUILD_ROOT}/boot/boom/profiles
+install -m 644 examples/boom.conf ${RPM_BUILD_ROOT}/boot/boom
+
+# Automatically enable legacy bootloader support for RHEL6 builds
+sed -i 's/enable = False/enable = True/' ${RPM_BUILD_ROOT}/boot/boom/boom.conf
+
+# probably all man here we can skip, but keeping for possible later remove
+mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
+mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
+install -m 644 man/man5/boom.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
+install -m 644 man/man8/boom.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
+popd
+
+# cleaning ...
+#rm -f ${RPM_BUILD_ROOT}/%{_bindir}/boom
+
+%post %{name_subpkg}
+if [ ! -e /var/lib/dbus/machine-id ]; then
+    dbus-uuidgen > /var/lib/dbus/machine-id
+fi
 
 
 %files
@@ -67,10 +131,23 @@ mkdir -p $RPM_BUILD_ROOT/etc/redhat-upgrade-tool/update.img.d
 # empty updates dir
 %dir /etc/redhat-upgrade-tool/update.img.d
 
-#TODO - finish and package gtk-based GUI
-#files gtk
-#{_bindir}/redhat-upgrade-tool-gtk
-#{_datadir}/redhat-upgrade-tool/ui
+%files %{name_subpkg}
+%{!?_licensedir:%global license %%doc}
+%license %{boom_dir}/COPYING
+%doc %{boom_dir}/README.md
+%doc %{_mandir}/man*/boom.*
+%if 0%{?sphinx_docs}
+%doc doc/html/
+%endif # if sphinx_docs
+%doc %{boom_dir}/examples/*
+%{python_sitelib}/boom*
+%{_bindir}/boom
+/etc/grub.d/42_boom
+%config(noreplace) /etc/default/boom
+%config(noreplace) /boot/boom/boom.conf
+/boot/*
+
+
 
 %changelog
 * Tue Jun 12 2018 Michal Bocek <mbocek@redhat.com> - 1:0.7.52-1
