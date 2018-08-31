@@ -1,6 +1,5 @@
 %global version_boom 0.8
 %global boom_dir boom-%{version_boom}
-%global name_subpkg modules
 
 Name:           redhat-upgrade-tool
 Version:        0.7.52
@@ -83,11 +82,6 @@ install -m 644 examples/boom.conf ${RPM_BUILD_ROOT}/boot/boom
 # Automatically enable legacy bootloader support for RHEL6 builds
 sed -i 's/enable = False/enable = True/' ${RPM_BUILD_ROOT}/boot/boom/boom.conf
 
-# probably all man here we can skip, but keeping for possible later remove
-mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man5
-mkdir -p ${RPM_BUILD_ROOT}/%{_mandir}/man8
-install -m 644 man/man5/boom.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
-install -m 644 man/man8/boom.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 popd
 
 # Move the boom utility under libexec as it is not supposed to be used by
@@ -107,7 +101,6 @@ fi
 # boom doc files
 %license %{boom_dir}/COPYING
 %doc %{boom_dir}/README.md
-%doc %{_mandir}/man*/boom.*
 %if 0%{?sphinx_docs}
 %doc doc/html/
 %endif # if sphinx_docs
