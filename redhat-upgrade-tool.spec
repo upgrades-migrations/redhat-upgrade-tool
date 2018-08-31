@@ -90,8 +90,9 @@ install -m 644 man/man5/boom.5 ${RPM_BUILD_ROOT}/%{_mandir}/man5
 install -m 644 man/man8/boom.8 ${RPM_BUILD_ROOT}/%{_mandir}/man8
 popd
 
-# cleaning ...
-#rm -f ${RPM_BUILD_ROOT}/%{_bindir}/boom
+# Move the boom utility under libexec as it is not supposed to be used by
+# users directly
+mv ${RPM_BUILD_ROOT}/%{_bindir}/boom ${RPM_BUILD_ROOT}/%{_libexecdir}/boom
 
 %post
 if [ ! -e /var/lib/dbus/machine-id ]; then
@@ -137,7 +138,7 @@ fi
 
 # boom
 %{python_sitelib}/boom*
-%{_bindir}/boom
+%{_libexecdir}/boom
 /etc/grub.d/42_boom
 %config(noreplace) /etc/default/boom
 %config(noreplace) /boot/boom/boom.conf
