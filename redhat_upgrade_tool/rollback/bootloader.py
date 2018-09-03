@@ -4,6 +4,8 @@ import shutil
 import platform
 from subprocess import CalledProcessError, call
 
+from redhat_upgrade_tool.rollback import rollback_dir
+
 try:
     from redhat_upgrade_tool import grub_conf_file
     from redhat_upgrade_tool.util import check_call
@@ -93,6 +95,20 @@ def restore_boot(release=platform.release()):
 def clean_snapshot_boot_files():
     for fmt in _SNAP_BOOT_FILES:
         path = os.path.join("/boot", fmt.format("snapshot"))
+        if os.path.isfile(path):
+            os.remove(path)
+
+
+def clean_target_boot_files():
+    # get target_kernel
+    target_kernel_file = os.path.join(rollback_dir,".target-kernel")
+    if not os.path.isfile(target_kernel_file):
+        # nothing to do
+        return
+    with open(target_kernel_file ,"rb") as kerf:
+        target_kernel = kerf.read()
+    for fmt in _SNAP_BOOT_FILES:
+        path = os.path.join("/boot", fmt.format(target_kernel))
         if os.path.isfile(path):
             os.remove(path)
 

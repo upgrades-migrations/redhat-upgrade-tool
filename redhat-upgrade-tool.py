@@ -27,15 +27,15 @@ import sys, time, platform, shutil, signal
 from subprocess import CalledProcessError, Popen, PIPE
 from ConfigParser import NoOptionError, RawConfigParser
 
-from redhat_upgrade_tool.util import call, check_call, check_output, rm_f, mkdir_p, rlistdir
+from redhat_upgrade_tool.util import call, check_call, check_output, rm_f, mkdir_p, rlistdir, kernelver
 from redhat_upgrade_tool.download import UpgradeDownloader, YumBaseError, yum_plugin_for_exc, URLGrabError
 from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mount, setup_cleanup_post, disable_old_repos, Config
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
 from redhat_upgrade_tool.rollback import snapshot_metadata_file, rhel6_profile
-from redhat_upgrade_tool.rollback.bootloader import boom_cleanup, restore_boot, create_boot_entry, restore_grub_conf, backup_boot_files, change_boot_entry, clean_snapshot_boot_files
+from redhat_upgrade_tool.rollback.bootloader import boom_cleanup, restore_boot, create_boot_entry, restore_grub_conf, backup_boot_files, change_boot_entry, clean_snapshot_boot_files, clean_target_boot_files
 from redhat_upgrade_tool.rollback.snapshot import LVM, SnapshotError
-from redhat_upgrade_tool.rollback.preparecleanup import create_cleanup_script
+from redhat_upgrade_tool.rollback.preparecleanup import create_cleanup_script, dump_target_kernelver
 from redhat_upgrade_tool.upgrade import RPMUpgrade, TransactionError
 
 from redhat_upgrade_tool.commandline import parse_args, do_cleanup, device_setup
@@ -227,6 +227,7 @@ def main(args):
         lvm.remove_snapshots()
         boom_cleanup(rhel6_profile)
         clean_snapshot_boot_files()
+        clean_target_boot_files()
         restore_grub_conf()
         return
     else:
@@ -316,6 +317,21 @@ def main(args):
     else:
         print _("getting boot images...")
         kernel, initrd = f.download_boot_images() # TODO: force arch?
+        if args.snapshot_root_lv:
+            # In case of rollback, we want to be able to remove kernel files
+            # of target (upgraded) system after the rollback and be sure that
+            # we will not remove those that possibly exists
+            kv = kernelver(kernel)
+            if not kv:
+                print _("Warning: cannot determine version of target kernel."
+                        " In case of rollback, you will need to remove kernel"
+                        " files of target kernel manually.")
+            elif os.path.isfile("/boot/vmlinuz-%s" % kv):
+                print _("Warning: detected kernel files matching with"
+                        " kernel of target system. In case of rollback, you"
+                        " would need to clean these files manually.")
+            else:
+                dump_target_kernelver(kv)
 
     if args.skippkgs:
         message("skipping package download")
