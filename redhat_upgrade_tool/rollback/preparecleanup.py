@@ -42,6 +42,11 @@ def create_cleanup_script():
     with open(os.path.join(rollback_dir, '.all-kernels'), 'w') as all_kernels:
         all_kernels.write(subprocess.Popen(["rpm", "-qa", "kernel"], stdout=subprocess.PIPE).communicate()[0])
 
+    script_path = os.path.join(rollback_dir, 'do_rollback')
+    with open(script_path, 'wb') as script_file:
+        script_file.write("#!/bin/bash\ncd /boot && python -m rollback.system_restore\n")
+    os.chmod(script_path, 774)
+
     dump_snapshot_boot_files()
 
 
