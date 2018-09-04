@@ -27,10 +27,11 @@ _SNAP_BOOT_FILES = [
     "config-{0}",
 ]
 
+_BOOM_UTIL_PATH = "/usr/libexec/boom"
 
 def create_boot_entry(title, os_profile, root_lv):
     cmd = [
-        "boom", "create",
+        _BOOM_UTIL_PATH, "create",
         "--profile", os_profile,
         "--title", title,
         "--root-lv", root_lv
@@ -44,7 +45,7 @@ def create_boot_entry(title, os_profile, root_lv):
 
 def boom_cleanup(os_profile):
     cmd = [
-        "boom", "delete",
+        _BOOM_UTIL_PATH, "delete",
         "--profile", os_profile
     ]
     try:
