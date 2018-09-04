@@ -6,6 +6,9 @@ import re
 import shlex
 import subprocess
 import ConfigParser
+import shutil
+
+from . import rollback_dir
 
 Config = ConfigParser.ConfigParser()
 Config.read("/boot/grub/snapshot.metadata")
@@ -83,8 +86,14 @@ def remove_loader_cache():
 def clean_grub_entry():
     return run_subprocess('grubby --grub --remove-kernel=/boot/vmlinuz-snapshot')
 
+def clean_rut_boot_dirs():
+    shutil.rmtree(rollback_dir, ignore_errors=True)
+    shutil.rmtree("/boot/manualcleanup", ignore_errors=True)
 
-remove_snap_boot_files()
-remove_snapshot()
-remove_loader_cache()
-clean_grub_entry()
+if __name__ == "__main__":
+    remove_snap_boot_files()
+    remove_snapshot()
+    remove_loader_cache()
+    clean_grub_entry()
+    # do this in the end to not keep the mess on the boot partition
+    clean_rut_boot_dirs()
