@@ -8,7 +8,10 @@ import subprocess
 import ConfigParser
 import shutil
 
-from . import rollback_dir
+try:
+    from redhat_upgrade_tool.rollback import rollback_dir, snap_boot_files_file
+except ImportError:
+    from . import rollback_dir, snap_boot_files_file
 
 Config = ConfigParser.ConfigParser()
 Config.read("/boot/grub/snapshot.metadata")
@@ -67,7 +70,7 @@ def remove_snapshot():
 
 
 def remove_snap_boot_files():
-    snap_boot_files_data = load_json('/boot/manualcleanup/snap_boot_files')
+    snap_boot_files_data = load_json(snap_boot_files_file)
     for snap_boot_file in snap_boot_files_data:
         if os.path.isfile(snap_boot_file):
             print snap_boot_file, " will be deleted"
@@ -88,7 +91,6 @@ def clean_grub_entry():
 
 def clean_rut_boot_dirs():
     shutil.rmtree(rollback_dir, ignore_errors=True)
-    shutil.rmtree("/boot/manualcleanup", ignore_errors=True)
 
 if __name__ == "__main__":
     remove_snap_boot_files()

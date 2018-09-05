@@ -23,23 +23,21 @@ import shutil
 import subprocess
 import platform
 from redhat_upgrade_tool.util import mkdir_p
-from redhat_upgrade_tool.rollback import rollback_dir
+from redhat_upgrade_tool.rollback import rollback_dir, snap_boot_files_file
+from redhat_upgrade_tool.rollback import active_kernel_file, all_kernels_file, target_kernel_file
 from redhat_upgrade_tool.rollback.bootloader import _SNAP_BOOT_FILES
 
 
 def create_cleanup_script():
-    if not os.path.isdir('/boot/manualcleanup'):
-        mkdir_p('/boot/manualcleanup')
-
     rollback_path = os.path.dirname(os.path.abspath(__file__))
     if os.path.exists(rollback_dir):
         shutil.rmtree(rollback_dir)
     shutil.copytree(rollback_path, rollback_dir)
 
-    with open(os.path.join(rollback_dir, '.active-kernel'), 'w') as active_kernel:
+    with open(active_kernel_file, 'w') as active_kernel:
         active_kernel.write(platform.release())
 
-    with open(os.path.join(rollback_dir, '.all-kernels'), 'w') as all_kernels:
+    with open(all_kernels_file, 'w') as all_kernels:
         all_kernels.write(subprocess.Popen(["rpm", "-qa", "kernel"], stdout=subprocess.PIPE).communicate()[0])
 
     script_path = os.path.join(rollback_dir, 'do_rollback')
@@ -57,7 +55,7 @@ def create_cleanup_script():
 
 def dump_target_kernelver(kv):
     # kv = kernel version
-    with open(os.path.join(rollback_dir, '.target-kernel'), 'w') as target_kernel:
+    with open(target_kernel_file, 'w') as target_kernel:
         target_kernel.write(kv)
 
 
@@ -66,7 +64,7 @@ def dump_snapshot_boot_files():
     for fmt in _SNAP_BOOT_FILES:
         path = os.path.join("/boot", fmt.format("snapshot"))
         _SNAP_BOOT_PATHS.append(path)
-        dump_vars(_SNAP_BOOT_PATHS, '/boot/manualcleanup/snap_boot_files')
+        dump_vars(_SNAP_BOOT_PATHS, snap_boot_files_file)
 
 
 def dump_vars(variables, out_file):
