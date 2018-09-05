@@ -4,7 +4,10 @@ import shutil
 import platform
 from subprocess import CalledProcessError, call
 
-from redhat_upgrade_tool.rollback import rollback_dir
+try:
+    from redhat_upgrade_tool.rollback import rollback_dir
+except ImportError:
+    from . import rollback_dir
 
 try:
     from redhat_upgrade_tool import grub_conf_file
