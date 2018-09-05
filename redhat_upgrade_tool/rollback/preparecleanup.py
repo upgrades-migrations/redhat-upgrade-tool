@@ -47,6 +47,11 @@ def create_cleanup_script():
         script_file.write("#!/bin/bash\ncd /boot && python -m rollback.system_restore\n")
     os.chmod(script_path, 774)
 
+    script_path = os.path.join(rollback_dir, 'do_cleanup')
+    with open(script_path, 'wb') as script_file:
+        script_file.write("#!/bin/bash\ncd /boot && python -m rollback.cleanup_script\n")
+    os.chmod(script_path, 774)
+
     dump_snapshot_boot_files()
 
 
