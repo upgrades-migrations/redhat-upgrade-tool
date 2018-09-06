@@ -23,34 +23,53 @@ import shutil
 import subprocess
 import platform
 from redhat_upgrade_tool.util import mkdir_p
+from redhat_upgrade_tool.rollback import rollback_dir, snap_boot_files_file, grub2_exists_file
+from redhat_upgrade_tool.rollback import active_kernel_file, all_kernels_file, target_kernel_file
 from redhat_upgrade_tool.rollback.bootloader import _SNAP_BOOT_FILES
 
 
 def create_cleanup_script():
-    rollback_dst = '/boot/rollback'
-    if not os.path.isdir('/boot/manualcleanup'):
-        mkdir_p('/boot/manualcleanup')
-
     rollback_path = os.path.dirname(os.path.abspath(__file__))
-    if os.path.exists(rollback_dst):
-        shutil.rmtree(rollback_dst)
-    shutil.copytree(rollback_path, rollback_dst)
+    if os.path.exists(rollback_dir):
+        shutil.rmtree(rollback_dir)
+    shutil.copytree(rollback_path, rollback_dir)
 
-    with open(os.path.join(rollback_dst, '.active-kernel'), 'w') as active_kernel:
+    with open(active_kernel_file, 'w') as active_kernel:
         active_kernel.write(platform.release())
 
-    with open(os.path.join(rollback_dst, '.all-kernels'), 'w') as all_kernels:
+    with open(all_kernels_file, 'w') as all_kernels:
         all_kernels.write(subprocess.Popen(["rpm", "-qa", "kernel"], stdout=subprocess.PIPE).communicate()[0])
 
-    dump_snapshot_boot_files()
+    script_path = os.path.join(rollback_dir, 'do_rollback')
+    with open(script_path, 'wb') as script_file:
+        script_file.write("#!/bin/bash\ncd /boot && python -m rollback.system_restore\n")
+    os.chmod(script_path, 0o774)
 
+    script_path = os.path.join(rollback_dir, 'do_cleanup')
+    with open(script_path, 'wb') as script_file:
+        script_file.write("#!/bin/bash\ncd /boot && python -m rollback.cleanup_script\n")
+    os.chmod(script_path, 0o774)
+
+    dump_snapshot_boot_files()
+    dump_grub2_exists()
+
+
+def dump_target_kernelver(kv):
+    # kv = kernel version
+    with open(target_kernel_file, 'w') as target_kernel:
+        target_kernel.write(kv)
+
+def dump_grub2_exists():
+    if os.path.isdir("/boot/grub2"):
+        with open(grub2_exists_file, 'w') as f:
+            f.write("1")
 
 def dump_snapshot_boot_files():
     _SNAP_BOOT_PATHS = []
     for fmt in _SNAP_BOOT_FILES:
         path = os.path.join("/boot", fmt.format("snapshot"))
         _SNAP_BOOT_PATHS.append(path)
-        dump_vars(_SNAP_BOOT_PATHS, '/boot/manualcleanup/snap_boot_files')
+        dump_vars(_SNAP_BOOT_PATHS, snap_boot_files_file)
 
 
 def dump_vars(variables, out_file):

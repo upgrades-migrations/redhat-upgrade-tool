@@ -7,7 +7,7 @@ implemented like that due to lack of time :(
 import os
 import subprocess
 
-from . import rhel6_profile, snapshot_metadata_file
+from . import rhel6_profile, snapshot_metadata_file, all_kernels_file, active_kernel_file
 from .snapshot import LVM
 from .bootloader import boom_cleanup, restore_boot
 
@@ -23,11 +23,11 @@ if __name__ == '__main__':
     # TODO: add boom binary to RHEL7
     # boom_cleanup(rhel6_profile)
     try:
-        with open("/boot/rollback/.active-kernel") as f_active_kernel:
+        with open(active_kernel_file) as f_active_kernel:
             active_kernel = f_active_kernel.read()
             restore_boot(active_kernel)
 
-            with open("/boot/rollback/.all-kernels") as f_all_kernels:
+            with open(all_kernels_file) as f_all_kernels:
                 all_kernels = f_all_kernels.read()
                 all_kernels = all_kernels.split('\n')
                 for kernel in all_kernels:
