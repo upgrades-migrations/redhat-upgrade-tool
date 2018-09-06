@@ -2,7 +2,7 @@
 %global boom_dir boom-%{version_boom}
 
 Name:           redhat-upgrade-tool
-Version:        0.7.52
+Version:        0.8.0
 Release:        1%{?dist}
 Summary:        The Red Hat Enterprise Linux Upgrade tool
 Epoch:          1
@@ -140,6 +140,10 @@ fi
 
 
 %changelog
+* Thu Sep 06 2018 Petr Stodulka <pstodulk@redhat.com> - 1:0.8.0-1
+- Add the rollback capability
+  Resolves: rhbz#1625999
+
 * Tue Jun 12 2018 Michal Bocek <mbocek@redhat.com> - 1:0.7.52-1
 - Add option to disable /boot size check
   Resolves: rhbz#1518317
