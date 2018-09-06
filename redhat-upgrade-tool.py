@@ -33,7 +33,7 @@ from redhat_upgrade_tool.sysprep import prep_upgrade, prep_boot, setup_media_mou
 from redhat_upgrade_tool.sysprep import modify_repos, remove_cache, reset_boot
 from redhat_upgrade_tool.boot import upgrade_boot_args
 from redhat_upgrade_tool.rollback import snapshot_metadata_file, rhel6_profile
-from redhat_upgrade_tool.rollback.bootloader import boom_cleanup, restore_boot, create_boot_entry, restore_grub_conf, backup_boot_files, change_boot_entry, clean_snapshot_boot_files, clean_target_boot_files
+from redhat_upgrade_tool.rollback.bootloader import boom_cleanup, restore_boot, create_boot_entry, restore_grub_conf, backup_boot_files, change_boot_entry, clean_snapshot_boot_files, clean_target_boot_files, clean_grub2, clean_target_kdump
 from redhat_upgrade_tool.rollback.snapshot import LVM, SnapshotError
 from redhat_upgrade_tool.rollback.preparecleanup import create_cleanup_script, dump_target_kernelver
 from redhat_upgrade_tool.rollback.cleanup_script import clean_rut_boot_dirs
@@ -229,7 +229,9 @@ def main(args):
         boom_cleanup(rhel6_profile)
         clean_snapshot_boot_files()
         clean_target_boot_files()
+        clean_target_kdump()
         restore_grub_conf()
+        clean_grub2()
         clean_rut_boot_dirs()
         return
     else:

@@ -23,7 +23,7 @@ import shutil
 import subprocess
 import platform
 from redhat_upgrade_tool.util import mkdir_p
-from redhat_upgrade_tool.rollback import rollback_dir, snap_boot_files_file
+from redhat_upgrade_tool.rollback import rollback_dir, snap_boot_files_file, grub2_exists_file
 from redhat_upgrade_tool.rollback import active_kernel_file, all_kernels_file, target_kernel_file
 from redhat_upgrade_tool.rollback.bootloader import _SNAP_BOOT_FILES
 
@@ -51,6 +51,7 @@ def create_cleanup_script():
     os.chmod(script_path, 0o774)
 
     dump_snapshot_boot_files()
+    dump_grub2_exists()
 
 
 def dump_target_kernelver(kv):
@@ -58,6 +59,10 @@ def dump_target_kernelver(kv):
     with open(target_kernel_file, 'w') as target_kernel:
         target_kernel.write(kv)
 
+def dump_grub2_exists():
+    if os.path.isdir("/boot/grub2"):
+        with open(grub2_exists_file, 'w') as f:
+            f.write("1")
 
 def dump_snapshot_boot_files():
     _SNAP_BOOT_PATHS = []

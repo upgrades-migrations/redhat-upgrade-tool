@@ -5,15 +5,16 @@ import platform
 from subprocess import CalledProcessError, call
 
 try:
-    from redhat_upgrade_tool.rollback import rollback_dir
+    from redhat_upgrade_tool.rollback import target_kernel_file, grub2_exists_file
 except ImportError:
-    from . import rollback_dir
+    from . import target_kernel_file, grub2_exists_file
 
 try:
     from redhat_upgrade_tool import grub_conf_file
     from redhat_upgrade_tool.util import check_call
 except ImportError:
     grub_conf_file = "/boot/grub/grub.conf"
+
     def check_call(*popenargs, **kwargs):
         retcode = call(*popenargs, **kwargs)
         if retcode:
@@ -33,6 +34,7 @@ _SNAP_BOOT_FILES = [
 ]
 
 _BOOM_UTIL_PATH = "/usr/libexec/boom"
+
 
 def create_boot_entry(title, os_profile, root_lv):
     cmd = [
@@ -104,17 +106,34 @@ def clean_snapshot_boot_files():
 
 def clean_target_boot_files():
     # get target_kernel
-    target_kernel_file = os.path.join(rollback_dir,".target-kernel")
     if not os.path.isfile(target_kernel_file):
         # nothing to do
         return
-    with open(target_kernel_file ,"rb") as kerf:
+    with open(target_kernel_file, "rb") as kerf:
         target_kernel = kerf.read()
     for fmt in _SNAP_BOOT_FILES:
         path = os.path.join("/boot", fmt.format(target_kernel))
         if os.path.isfile(path):
             os.remove(path)
 
+
+def clean_target_kdump():
+    # After the rollback, kdump of target kernel could be made. Remove it
+    # in case the target-kernel file exists.
+    if not os.path.isfile(target_kernel_file):
+        # nothing to do
+        return
+    with open(target_kernel_file, "rb") as kerf:
+        target_kernel = kerf.read()
+    path = "/boot/initramfs-{0}kdump.img".format(target_kernel)
+    if os.path.isfile(path):
+        os.remove(path)
+
+def clean_grub2():
+    # After rollback, grub2 dir is still present. Remove it when originally
+    # didn't exist.
+    if os.path.isfile(grub2_exists_file):
+        shutil.rmtree("/boot/grub2", ignore_errors=True)
 
 def restore_grub_conf():
     backup_file = "%s.preupg" % grub_conf_file
