@@ -176,6 +176,9 @@ def main(args):
         raise SystemExit(1)
 
     if args.snapshot_root_lv:
+        if platform.machine() != "x86_64":
+            print _("Error: Rollbacks are possible only on the x86_64 architecture.")
+            raise SystemExit(1)
         create_cleanup_script()
 
     if args.system_restore:
